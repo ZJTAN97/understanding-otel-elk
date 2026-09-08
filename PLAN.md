@@ -1,6 +1,6 @@
 # Elastic Observability with OpenTelemetry — Learning Plan
 
-> Status: **plan only, nothing built yet.**
+> Status: **P0 built and verified** (see README.md and docs/notes-per-phase.md). P1 next.
 > Goal: understand the inner workings of OTel → Elastic for Spring Boot apps and for
 > RabbitMQ / MongoDB / MinIO, first on Docker Compose, then on Kubernetes via k3d.
 
@@ -8,24 +8,24 @@
 
 ## 0. Decisions already made
 
-| Decision | Choice | Why |
-|---|---|---|
-| Ingest path | **Collector → `elasticsearch` exporter → Elasticsearch** | Fewest moving parts; every document is inspectable in Discover. No APM Server. |
+| Decision     | Choice                                                                                                 | Why                                                                                                         |
+| ------------ | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Ingest path  | **Collector → `elasticsearch` exporter → Elasticsearch**                                               | Fewest moving parts; every document is inspectable in Discover. No APM Server.                              |
 | Distribution | **Vanilla upstream** (`otel/opentelemetry-collector-contrib` + upstream `opentelemetry-javaagent.jar`) | You configure every knob yourself; knowledge transfers to any backend. EDOT comes later as a diff exercise. |
-| Sample apps | **Two minimal apps, Spring Boot 3.5** | Purpose-built to fire exactly the instrumentation modules we want to study. |
-| Mapping mode | `mapping.mode: otel` on the exporter | OTel-native document shape; requires ES >= 8.12, works best on >= 8.16. |
+| Sample apps  | **Two minimal apps, Spring Boot 3.5**                                                                  | Purpose-built to fire exactly the instrumentation modules we want to study.                                 |
+| Mapping mode | `mapping.mode: otel` on the exporter                                                                   | OTel-native document shape; requires ES >= 8.12, works best on >= 8.16.                                     |
 
 ### Version pinning
 
 Tags verified to exist in the registries (probed, not guessed):
 
-| Component | Candidate pin | Note |
-|---|---|---|
-| Elasticsearch | `9.5.0` | `docker.elastic.co/elasticsearch/elasticsearch` |
-| Kibana | `9.5.0` | must match Elasticsearch exactly |
-| Collector (contrib) | `0.145.0` | `otel/opentelemetry-collector-contrib` |
-| OTel Java agent | latest `2.x` | resolve exact version from the GitHub release when we reach P1 |
-| Java / Spring Boot | JDK 21 / Boot 3.5.x | Boot 3.5 needs JDK 17+; 21 is the sane default |
+| Component           | Candidate pin       | Note                                                           |
+| ------------------- | ------------------- | -------------------------------------------------------------- |
+| Elasticsearch       | `8.14.2`            | `docker.elastic.co/elasticsearch/elasticsearch`                |
+| Kibana              | `8.14.2`            | must match Elasticsearch exactly                               |
+| Collector (contrib) | `0.145.0`           | `otel/opentelemetry-collector-contrib`                         |
+| OTel Java agent     | latest `2.x`        | resolve exact version from the GitHub release when we reach P1 |
+| Java / Spring Boot  | JDK 21 / Boot 3.5.x | Boot 3.5 needs JDK 17+; 21 is the sane default                 |
 
 All pinned in a single `.env` so upgrades are one-line changes. I had not finished
 confirming the newest patch releases when we stopped — worth a final check before P0 is
@@ -58,12 +58,12 @@ by the Collector. The Collector's entire job is to hide that difference from Ela
 
 **Signal availability per component** — this is the table that saves you a week:
 
-| Component | Traces | Metrics | Logs |
-|---|---|---|---|
-| Spring Boot apps | yes — Java agent (auto) | yes — Java agent (JVM + HTTP) | yes — Logback appender bridge |
-| RabbitMQ | none — you get *client-side* producer/consumer spans from the apps | scrape | stdout |
-| MongoDB | none — you get *client-side* driver spans from the apps | scrape | `mongod.log` (JSON) |
-| MinIO | none — you get *client-side* S3 SDK spans from the apps | scrape | stdout + audit webhook |
+| Component        | Traces                                                             | Metrics                       | Logs                          |
+| ---------------- | ------------------------------------------------------------------ | ----------------------------- | ----------------------------- |
+| Spring Boot apps | yes — Java agent (auto)                                            | yes — Java agent (JVM + HTTP) | yes — Logback appender bridge |
+| RabbitMQ         | none — you get *client-side* producer/consumer spans from the apps | scrape                        | stdout                        |
+| MongoDB          | none — you get *client-side* driver spans from the apps            | scrape                        | `mongod.log` (JSON)           |
+| MinIO            | none — you get *client-side* S3 SDK spans from the apps            | scrape                        | stdout + audit webhook        |
 
 Understanding *why* client-side spans are sufficient for datastores and brokers is a core
 insight, not a workaround.
@@ -305,14 +305,14 @@ can run both and diff them.
 
 ## 5. Known risks and open questions
 
-| Item | Risk | How we handle it |
-|---|---|---|
-| Elasticsearch memory in Compose | ES will refuse to start or will thrash on default Docker Desktop memory | Set explicit JVM heap, disable ML, document the Docker Desktop memory floor |
-| `mapping.mode: otel` field/UI coverage | Some Kibana views historically expected APM-Server-shaped documents | Verify per view; if a specific view needs it, add APM Server as an *optional* Compose profile rather than changing the default |
-| Security disabled locally | Not representative of production | Deliberate for P0–P5 to cut moving parts; re-enable TLS + API keys in P6 |
-| Exact patch versions | Newest patch releases not fully confirmed yet | Confirm and pin in `.env` before P0 is built; any probed tag above works today |
-| Agent version drift | Java agent 2.x semantic conventions are still evolving | Pin the agent version explicitly; never use `latest` |
-| MinIO S3 SDK instrumentation | AWS SDK instrumentation against a non-AWS endpoint may attribute oddly | Treat as a finding to document in P3, not as a blocker |
+| Item                                   | Risk                                                                    | How we handle it                                                                                                               |
+| -------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Elasticsearch memory in Compose        | ES will refuse to start or will thrash on default Docker Desktop memory | Set explicit JVM heap, disable ML, document the Docker Desktop memory floor                                                    |
+| `mapping.mode: otel` on 8.14.2         | 8.14 clears the >= 8.12 floor but predates the >= 8.16 maturity point, so APM UI gaps are likely, not hypothetical | Verify each Kibana view as we build it; expect to enable the *optional* APM Server Compose profile for views that need APM-Server-shaped documents, and record which ones |
+| Security disabled locally              | Not representative of production                                        | Deliberate for P0–P5 to cut moving parts; re-enable TLS + API keys in P6                                                       |
+| Exact patch versions                   | Newest patch releases not fully confirmed yet                           | Confirm and pin in `.env` before P0 is built; any probed tag above works today                                                 |
+| Agent version drift                    | Java agent 2.x semantic conventions are still evolving                  | Pin the agent version explicitly; never use `latest`                                                                           |
+| MinIO S3 SDK instrumentation           | AWS SDK instrumentation against a non-AWS endpoint may attribute oddly  | Treat as a finding to document in P3, not as a blocker                                                                         |
 
 ---
 

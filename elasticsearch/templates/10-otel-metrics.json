@@ -1,0 +1,25 @@
+{
+  "index_patterns": ["metrics-*.otel-*"],
+  "priority": 200,
+  "data_stream": {},
+  "composed_of": ["otel-common@mappings"],
+  "template": {
+    "mappings": {
+      "properties": {
+        "start_timestamp":    { "type": "date_nanos" },
+        "unit":               { "type": "keyword" },
+        "_metric_names_hash": { "type": "keyword" }
+      },
+      "dynamic_templates": [
+        { "counter_long":          { "mapping": { "type": "long" } } },
+        { "gauge_long":            { "mapping": { "type": "long" } } },
+        { "counter_double":        { "mapping": { "type": "double" } } },
+        { "gauge_double":          { "mapping": { "type": "double" } } },
+        { "histogram":             { "mapping": { "type": "histogram" } } },
+        { "exponential_histogram": { "mapping": { "type": "histogram" } } },
+        { "summary_metrics":       { "mapping": { "type": "aggregate_metric_double", "metrics": ["sum", "value_count"], "default_metric": "sum" } } },
+        { "summary":               { "mapping": { "type": "aggregate_metric_double", "metrics": ["sum", "value_count"], "default_metric": "sum" } } }
+      ]
+    }
+  }
+}
