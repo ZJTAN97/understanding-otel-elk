@@ -1,0 +1,23 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: elastic-lab
+# Pinned to match production. Do not float this tag.
+image: rancher/k3s:v1.28.15-k3s1
+servers: 1
+agents: 2
+# Without this, k3d writes host.docker.internal + a random port into the
+# kubeconfig. On Docker Desktop with WSL2 that name resolves to a vEthernet
+# address the host cannot reach, and every kubectl call times out.
+# Pin the API server to loopback and a fixed port instead.
+kubeAPI:
+  host: "127.0.0.1"
+  hostIP: "127.0.0.1"
+  hostPort: "6445"
+options:
+  k3d:
+    wait: true
+    timeout: "300s"
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true

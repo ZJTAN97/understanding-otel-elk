@@ -1,0 +1,491 @@
+<title>Pinned Lab Cluster</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#EDF0F3;
+    --surface:#FFFFFF;
+    --ink:#12161C;
+    --muted:#58626F;
+    --rule:#D3D9E0;
+    --accent:#8A5D00;
+    --accent-soft:rgba(138,93,0,.10);
+    --ok:#0F6B54;
+    --warn:#9C3B12;
+    --term-bg:#151A21;
+    --term-ink:#DCE2EA;
+    --term-dim:#7C8794;
+    --term-rule:#2A323C;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0E1218;
+      --surface:#151A21;
+      --ink:#E3E8EE;
+      --muted:#98A2AF;
+      --rule:#252C36;
+      --accent:#E2AB45;
+      --accent-soft:rgba(226,171,69,.12);
+      --ok:#4FBFA0;
+      --warn:#E08050;
+      --term-bg:#0A0D12;
+      --term-ink:#DCE2EA;
+      --term-dim:#78838F;
+      --term-rule:#222A33;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0E1218;
+    --surface:#151A21;
+    --ink:#E3E8EE;
+    --muted:#98A2AF;
+    --rule:#252C36;
+    --accent:#E2AB45;
+    --accent-soft:rgba(226,171,69,.12);
+    --ok:#4FBFA0;
+    --warn:#E08050;
+    --term-bg:#0A0D12;
+    --term-ink:#DCE2EA;
+    --term-dim:#78838F;
+    --term-rule:#222A33;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+    font-size:15.5px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:900px;margin:0 auto;padding:40px 24px 96px}
+  h1,h2,h3,.eyebrow,.num{font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif}
+  h1{font-size:clamp(2.1rem,5vw,3.1rem);font-weight:700;line-height:1.03;letter-spacing:-.015em;margin:.15em 0 .3em;text-wrap:balance}
+  h2{font-size:1.45rem;font-weight:700;letter-spacing:-.01em;margin:0 0 .2em;text-wrap:balance}
+  h3{font-size:1.02rem;font-weight:600;margin:0 0 .35em}
+  p{margin:0 0 .85em;max-width:66ch}
+  a{color:var(--accent)}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.88em}
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:500;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--accent);
+  }
+  .lede{font-size:1.12rem;color:var(--muted);max-width:60ch}
+
+  /* header */
+  header{border-bottom:1px solid var(--rule);padding-bottom:28px;margin-bottom:36px}
+  .goal{
+    display:flex;gap:14px;align-items:flex-start;margin-top:22px;
+    border-left:3px solid var(--accent);padding:2px 0 2px 14px;
+  }
+  .goal p{margin:0;font-size:.95rem}
+
+  /* pin table */
+  .pins{width:100%;border-collapse:collapse;font-size:.92rem;margin:.4em 0 0}
+  .pins th{
+    text-align:left;font-family:"IBM Plex Mono",monospace;font-size:.68rem;
+    letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+    font-weight:500;padding:0 12px 8px 0;border-bottom:1px solid var(--rule);
+  }
+  .pins td{padding:9px 12px 9px 0;border-bottom:1px solid var(--rule);vertical-align:top;font-variant-numeric:tabular-nums}
+  .pins td:first-child{font-weight:500;white-space:nowrap}
+  .pins code{background:var(--accent-soft);color:var(--ink);padding:1px 5px;border-radius:3px}
+  .state{font-family:"IBM Plex Mono",monospace;font-size:.78rem;white-space:nowrap}
+  .state.bad{color:var(--warn)}
+  .state.good{color:var(--ok)}
+
+  /* sections */
+  section{margin-top:52px}
+  .rail{display:grid;grid-template-columns:56px 1fr;gap:0 20px;align-items:start}
+  .num{
+    font-size:1.5rem;font-weight:700;color:var(--accent);
+    font-variant-numeric:tabular-nums;line-height:1.1;padding-top:.05em;
+    border-top:2px solid var(--accent);
+  }
+  .step{margin-top:40px}
+  .step:first-of-type{margin-top:26px}
+
+  /* code */
+  pre{
+    background:var(--term-bg);color:var(--term-ink);border-radius:5px;
+    margin:.9em 0;padding:14px 16px;overflow-x:auto;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.83rem;line-height:1.65;
+    border:1px solid var(--term-rule);
+  }
+  pre .c{color:var(--term-dim)}
+  pre .k{color:#E2AB45}
+  .block{position:relative}
+  .filename{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.06em;
+    color:var(--muted);margin:1.4em 0 -.5em;
+  }
+  .copy{
+    font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.08em;
+    text-transform:uppercase;background:none;border:1px solid var(--rule);
+    color:var(--muted);border-radius:3px;padding:3px 8px;cursor:pointer;
+  }
+  .copy:hover{color:var(--ink);border-color:var(--muted)}
+  .copy:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* expected output / checks */
+  .check{
+    display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:baseline;
+    font-size:.93rem;margin:.5em 0;
+  }
+  .tick{color:var(--ok);font-family:"IBM Plex Mono",monospace}
+  .note{
+    background:var(--surface);border:1px solid var(--rule);border-radius:5px;
+    padding:16px 18px;margin:1.2em 0;font-size:.93rem;
+  }
+  .note.warn{border-left:3px solid var(--warn)}
+  .note.fwd{border-left:3px solid var(--accent)}
+  .note p:last-child{margin-bottom:0}
+  .note .eyebrow{display:block;margin-bottom:.4em;color:var(--muted)}
+  .note.warn .eyebrow{color:var(--warn)}
+
+  ul{margin:.4em 0 1em;padding-left:1.1em;max-width:64ch}
+  li{margin:.3em 0}
+
+  /* topology */
+  figure{margin:1.6em 0 0}
+  figcaption{font-size:.82rem;color:var(--muted);margin-top:10px;max-width:62ch}
+  svg{width:100%;height:auto;display:block}
+  .sv-surface{fill:var(--surface)}
+  .sv-rule{stroke:var(--rule)}
+  .sv-ink{fill:var(--ink)}
+  .sv-muted{fill:var(--muted)}
+  .sv-accent{fill:var(--accent)}
+  .sv-accent-s{stroke:var(--accent)}
+  .sv-t{font-family:"IBM Plex Sans",sans-serif;font-size:12px}
+  .sv-m{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.04em}
+
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--rule);color:var(--muted);font-size:.9rem}
+  @media (max-width:640px){
+    .rail{grid-template-columns:1fr;gap:8px}
+    .num{border-top:none;padding-top:0}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="page">
+
+<header>
+  <span class="eyebrow">Phase 01 · Lab environment</span>
+  <h1>A cluster pinned to 1.28.15</h1>
+  <p class="lede">Three k3s nodes in Docker that behave like the production cluster — so every
+  compatibility finding in the next twenty phases actually transfers.</p>
+  <div class="goal">
+    <p><strong>Done when:</strong> three <code>Ready</code> nodes on v1.28.15, a <code>kubectl</code> within one
+    minor of them, and the cluster definition living in <code>phase-1/k3d/cluster.yaml</code> instead of your shell history.</p>
+  </div>
+</header>
+
+<section>
+  <h2>Where you are right now</h2>
+  <p>Two of these four are wrong on this machine. Both are silent failures — the cluster
+  comes up either way.</p>
+  <table class="pins">
+    <thead>
+      <tr><th>Layer</th><th>Required</th><th>On this machine</th><th></th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Kubernetes (prod)</td><td><code>v1.28.15</code></td>
+        <td>k3d default is <code>v1.35.5-k3s1</code></td>
+        <td class="state bad">must pin</td>
+      </tr>
+      <tr>
+        <td>kubectl client</td><td>v1.27 – v1.29</td>
+        <td>v1.34.1 → 6 minors of skew</td>
+        <td class="state bad">must downgrade</td>
+      </tr>
+      <tr>
+        <td>Docker memory</td><td>≥ 8 GB</td>
+        <td>16.4 GB</td>
+        <td class="state good">ok</td>
+      </tr>
+      <tr>
+        <td>k3d</td><td>any 5.x</td>
+        <td>v5.9.0</td>
+        <td class="state good">ok</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="note warn">
+    <span class="eyebrow">Why skew bites</span>
+    <p>kubectl supports ±1 minor from the API server. At 6 minors it <em>mostly</em> works, which is
+    exactly the problem: it drops or mangles fields on API objects it doesn't know, and ECK
+    manifests are full of them. You get a resource that applied cleanly and does the wrong thing.</p>
+  </div>
+</section>
+
+<section>
+  <h2>What you are building</h2>
+  <figure>
+    <svg viewBox="0 0 820 300" role="img" aria-label="Diagram: kubectl talks to a k3d serverlb container, which fronts one server node and two agent nodes inside Docker Desktop's WSL2 VM.">
+      <!-- docker host boundary -->
+      <rect x="150" y="12" width="656" height="276" rx="6" class="sv-surface sv-rule" stroke-width="1" stroke-dasharray="4 4"/>
+      <text x="166" y="34" class="sv-m sv-muted">DOCKER DESKTOP · WSL2 VM · 16.4 GB</text>
+
+      <!-- kubectl -->
+      <rect x="8" y="108" width="112" height="52" rx="4" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="24" y="132" class="sv-t sv-ink" font-weight="600">kubectl</text>
+      <text x="24" y="149" class="sv-m sv-muted">v1.29.x</text>
+      <path d="M120 134 H176" class="sv-accent-s" stroke-width="1.5" fill="none"/>
+      <path d="M176 134 l-8 -4 v8 z" class="sv-accent"/>
+      <text x="122" y="126" class="sv-m sv-accent">:6443</text>
+
+      <!-- serverlb -->
+      <rect x="182" y="96" width="126" height="76" rx="4" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="196" y="122" class="sv-t sv-ink" font-weight="600">serverlb</text>
+      <text x="196" y="140" class="sv-m sv-muted">nginx proxy</text>
+      <text x="196" y="156" class="sv-m sv-muted">k3d-elastic-lab-</text>
+      <text x="196" y="168" class="sv-m sv-muted">serverlb</text>
+
+      <!-- links to nodes -->
+      <path d="M308 134 H352" class="sv-rule" stroke-width="1.5" fill="none"/>
+      <path d="M352 134 V50 H388" class="sv-rule" stroke-width="1.5" fill="none"/>
+      <path d="M352 134 H388" class="sv-rule" stroke-width="1.5" fill="none"/>
+      <path d="M352 134 V222 H388" class="sv-rule" stroke-width="1.5" fill="none"/>
+
+      <!-- server node -->
+      <rect x="388" y="22" width="278" height="56" rx="4" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="404" y="45" class="sv-t sv-ink" font-weight="600">server-0</text>
+      <text x="404" y="63" class="sv-m sv-muted">control plane · etcd · scheduler</text>
+      <text x="654" y="45" class="sv-m sv-accent" text-anchor="end">v1.28.15-k3s1</text>
+
+      <!-- agent 0 -->
+      <rect x="388" y="106" width="278" height="56" rx="4" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="404" y="129" class="sv-t sv-ink" font-weight="600">agent-0</text>
+      <text x="404" y="147" class="sv-m sv-muted">kubelet · containerd</text>
+      <text x="654" y="129" class="sv-m sv-accent" text-anchor="end">v1.28.15-k3s1</text>
+
+      <!-- agent 1 -->
+      <rect x="388" y="194" width="278" height="56" rx="4" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="404" y="217" class="sv-t sv-ink" font-weight="600">agent-1</text>
+      <text x="404" y="235" class="sv-m sv-muted">kubelet · containerd</text>
+      <text x="654" y="217" class="sv-m sv-accent" text-anchor="end">v1.28.15-k3s1</text>
+
+      <!-- bundled addons -->
+      <text x="690" y="45" class="sv-m sv-muted">bundled,</text>
+      <text x="690" y="59" class="sv-m sv-muted">unasked:</text>
+      <text x="690" y="82" class="sv-m sv-ink">traefik</text>
+      <text x="690" y="100" class="sv-m sv-ink">local-path</text>
+      <text x="690" y="118" class="sv-m sv-ink">coredns</text>
+      <text x="690" y="136" class="sv-m sv-ink">metrics-server</text>
+      <text x="690" y="160" class="sv-m sv-muted">→ Phase 04</text>
+      <text x="690" y="174" class="sv-m sv-muted">→ Phase 05</text>
+    </svg>
+    <figcaption>Two agents, not zero. A single node cannot show shard allocation across nodes,
+    pod anti-affinity, or a node going away — which is what Phases 04 and 06 exist to teach.
+    No <code>--port</code> mappings either: ECK makes ClusterIP services, so port flags at the
+    load balancer would be dead config. Phase 05 uses real Ingress through Traefik.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Run it</h2>
+
+  <div class="step rail">
+    <div class="num">01</div>
+    <div>
+      <h3>Replace kubectl with a 1.29 build</h3>
+      <p>Five minutes, and it removes a whole class of confusing failures before they happen.
+      Put it somewhere early on <code>PATH</code>; keep the new one out of <code>System32</code>.</p>
+      <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>New-Item -ItemType Directory -Force "$env:USERPROFILE\bin" | Out-Null
+curl.exe -Lo "$env:USERPROFILE\bin\kubectl.exe" `
+  https://dl.k8s.io/release/v1.29.15/bin/windows/amd64/kubectl.exe
+
+<span class="c"># prepend to PATH for this session, then persist it</span>
+$env:PATH = "$env:USERPROFILE\bin;$env:PATH"
+[Environment]::SetEnvironmentVariable(
+  "PATH", "$env:USERPROFILE\bin;" + [Environment]::GetEnvironmentVariable("PATH","User"), "User")
+
+kubectl version --client   <span class="c"># expect: Client Version: v1.29.15</span></pre>
+      <div class="note">
+        <span class="eyebrow">If it still says v1.34.1</span>
+        <p>Docker Desktop ships its own kubectl and puts it early on the machine PATH. Check with
+        <code>Get-Command kubectl -All</code> and make sure <code>~\bin</code> wins, or open a fresh terminal.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">02</div>
+    <div>
+      <h3>Write the cluster definition to a file</h3>
+      <p>The flags-in-shell-history version works. Putting it in git is the entire habit this
+      phase is teaching, so start as you mean to continue.</p>
+      <div class="filename"><span>phase-1/k3d/cluster.yaml</span><button class="copy" type="button">copy</button></div>
+<pre><span class="k">apiVersion:</span> k3d.io/v1alpha5
+<span class="k">kind:</span> Simple
+<span class="k">metadata:</span>
+  <span class="k">name:</span> elastic-lab
+<span class="c"># Pinned to match production. Do not float this tag.</span>
+<span class="k">image:</span> rancher/k3s:v1.28.15-k3s1
+<span class="k">servers:</span> 1
+<span class="k">agents:</span> 2
+<span class="c"># Without this, k3d writes host.docker.internal + a random port into the</span>
+<span class="c"># kubeconfig, and on Docker Desktop + WSL2 that name resolves to a vEthernet</span>
+<span class="c"># address the host cannot reach. Pin to loopback and a fixed port.</span>
+<span class="k">kubeAPI:</span>
+  <span class="k">host:</span> <span class="c">"127.0.0.1"</span>
+  <span class="k">hostIP:</span> <span class="c">"127.0.0.1"</span>
+  <span class="k">hostPort:</span> <span class="c">"6445"</span>
+<span class="k">options:</span>
+  <span class="k">k3d:</span>
+    <span class="k">wait:</span> true
+    <span class="k">timeout:</span> <span class="c">"300s"</span>
+  <span class="k">kubeconfig:</span>
+    <span class="k">updateDefaultKubeconfig:</span> true
+    <span class="k">switchCurrentContext:</span> true</pre>
+      <div class="filename"><span>PowerShell · from the repo root</span><button class="copy" type="button">copy</button></div>
+<pre>New-Item -ItemType Directory -Force phase-1\k3d | Out-Null
+<span class="c"># paste the YAML above into phase-1\k3d\cluster.yaml, then:</span>
+git add phase-1\k3d\cluster.yaml</pre>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">03</div>
+    <div>
+      <h3>Create the cluster</h3>
+      <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>k3d cluster create --config phase-1\k3d\cluster.yaml</pre>
+      <div class="note warn">
+        <span class="eyebrow">If kubectl now times out — hit on this machine</span>
+        <p>The symptom is <code>couldn't get current server API group list: Get
+        "https://host.docker.internal:56304/api": dial tcp 172.23.142.3:56304: connectex: A connection
+        attempt failed...</code>, repeating every ~20 seconds. The cluster is <em>fine</em> —
+        <code>docker ps</code> shows serverlb publishing <code>0.0.0.0:56304-&gt;6443/tcp</code> and
+        <code>k3d cluster list</code> reads <code>1/1</code>, <code>2/2</code>. Only the kubeconfig is wrong.</p>
+        <p>k3d detects Docker Desktop and writes <code>host.docker.internal</code> as the API server
+        host. With the WSL2 backend that name resolves to a vEthernet address
+        (<code>172.23.142.3</code> here) that the Windows host cannot route to — and if your DNS is a
+        corporate resolver, it may not resolve at all. Loopback works, because the port is published
+        on <code>0.0.0.0</code>. Prove it, then rewrite the one field:</p>
+        <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>docker ps --filter name=k3d-elastic-lab-serverlb --format "{{.Ports}}"
+<span class="c"># 0.0.0.0:56304-&gt;6443/tcp   → take the host port</span>
+
+curl.exe -sk -o NUL -w "%{http_code}`n" https://127.0.0.1:56304/version
+<span class="c"># 401 is the success case here: TLS and HTTP work, curl just has no credentials</span>
+
+kubectl config set-cluster k3d-elastic-lab --server=https://127.0.0.1:56304</pre>
+        <p>The <code>kubeAPI</code> block in step 2 makes this stick across recreates, and fixes the
+        port at <code>6445</code> so the URL stops changing. Recreating the cluster with a config file
+        that lacks it puts the broken host back.</p>
+      </div>
+      <p>First run pulls <code>rancher/k3s:v1.28.15-k3s1</code> three times over — one image, three
+      containers — so expect a few minutes. The equivalent one-liner, if you want to see what the
+      file is doing:</p>
+<pre>k3d cluster create elastic-lab <span class="c">`</span>
+  --image rancher/k3s:v1.28.15-k3s1 <span class="c">`</span>
+  --servers 1 --agents 2</pre>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">04</div>
+    <div>
+      <h3>Verify — and read the output, don't skim it</h3>
+      <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl get nodes -o wide
+kubectl get storageclass
+kubectl get pods -A
+kubectl version</pre>
+      <p>What you are looking for:</p>
+      <div class="check"><span class="tick">✓</span><span>Three nodes, all <code>Ready</code>, <code>VERSION</code> column reads <code>v1.28.15+k3s1</code> on every one</span></div>
+      <div class="check"><span class="tick">✓</span><span><code>local-path</code> marked <code>(default)</code> — Phase 04 leans on this</span></div>
+      <div class="check"><span class="tick">✓</span><span><code>traefik</code>, <code>coredns</code>, <code>local-path-provisioner</code>, <code>metrics-server</code> all <code>Running</code> in <code>kube-system</code></span></div>
+      <div class="check"><span class="tick">✓</span><span>Client and server within one minor: <code>v1.29.15</code> against <code>v1.28.15+k3s1</code></span></div>
+<pre>NAME                       STATUS   ROLES                  AGE   VERSION
+k3d-elastic-lab-agent-0    Ready    &lt;none&gt;                 2m    v1.28.15+k3s1
+k3d-elastic-lab-agent-1    Ready    &lt;none&gt;                 2m    v1.28.15+k3s1
+k3d-elastic-lab-server-0   Ready    control-plane,master   2m    v1.28.15+k3s1</pre>
+      <p>If <code>VERSION</code> shows anything else, the image tag did not take. Delete and recreate —
+      <code>k3d cluster delete elastic-lab</code> — rather than carrying on. Everything downstream
+      inherits this number.</p>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">05</div>
+    <div>
+      <h3>The deliberate exercise</h3>
+      <p>Look at what <code>k3d cluster create</code> gave you that you never asked for, and decide
+      for each one whether production has an equivalent. That judgement is what stops you writing
+      lab-only manifests in Phase 14.</p>
+      <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>docker ps --filter name=k3d-elastic-lab --format "table {{.Names}}\t{{.Image}}"
+kubectl get deploy,ds -n kube-system
+kubectl -n kube-system get helmchart traefik -o yaml | Select-String -Pattern "version|chart"</pre>
+      <ul>
+        <li><strong>serverlb</strong> — an nginx container in front of the API server. Production has a
+        real load balancer; the shape is the same, the thing is not.</li>
+        <li><strong>traefik</strong> — a genuine ingress controller. Whatever production runs, the
+        <code>Ingress</code> objects you write in Phase 05 are portable; the annotations are not.</li>
+        <li><strong>local-path</strong> — hostPath volumes bound to one node. Production storage will be
+        network-backed, which changes what happens when a node dies. Phase 04's whole point.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Two things to set before Phase 03</h2>
+  <div class="note fwd">
+    <span class="eyebrow">vm.max_map_count</span>
+    <p>Elasticsearch refuses to start unless the kernel allows at least 262144 memory-mapped
+    areas, and the kernel here is the shared WSL2 VM — not the k3d containers. It resets on
+    Docker Desktop restart, so expect to reapply it (or write it into <code>%USERPROFILE%\.wslconfig</code>).</p>
+    <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>wsl -d docker-desktop sysctl -w vm.max_map_count=262144
+wsl -d docker-desktop sysctl vm.max_map_count   <span class="c"># confirm</span></pre>
+  </div>
+  <div class="note fwd">
+    <span class="eyebrow">Restart behaviour</span>
+    <p>k3d clusters survive a reboot but come back stopped. <code>k3d cluster start elastic-lab</code>
+    brings them up; <code>k3d cluster list</code> shows what you have. Never <code>delete</code> when you
+    meant <code>stop</code> — the data in <code>local-path</code> volumes goes with it.</p>
+  </div>
+</section>
+
+<footer>
+  <p>Next: <strong>Phase 02 — ECK operator</strong>, which installs the latest 3.0.x CRDs against
+  this 1.28 API server. Record what broke, the exact error text, and the cause in
+  <code>docs/01-lab-environment.md</code> under Notes as you go.</p>
+</footer>
+
+</div>
+
+<script>
+  document.querySelectorAll(".copy").forEach(function (btn) {
+    btn.addEventListener("click", async function () {
+      var pre = btn.closest(".filename") && btn.closest(".filename").nextElementSibling;
+      if (!pre || pre.tagName !== "PRE") return;
+      var text = pre.innerText;
+      var done = false;
+      try {
+        await navigator.clipboard.writeText(text);
+        done = true;
+      } catch (e) {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          done = document.execCommand("copy");
+          document.body.removeChild(ta);
+        } catch (e2) { done = false; }
+      }
+      var was = btn.textContent;
+      btn.textContent = done ? "copied" : "select it";
+      setTimeout(function () { btn.textContent = was; }, 1600);
+    });
+  });
+</script>

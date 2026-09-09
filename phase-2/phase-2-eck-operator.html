@@ -1,0 +1,559 @@
+<title>Pinning ECK 3.0.0</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#EDF0F3;
+    --surface:#FFFFFF;
+    --ink:#12161C;
+    --muted:#58626F;
+    --rule:#D3D9E0;
+    --accent:#8A5D00;
+    --accent-soft:rgba(138,93,0,.10);
+    --ok:#0F6B54;
+    --warn:#9C3B12;
+    --term-bg:#151A21;
+    --term-ink:#DCE2EA;
+    --term-dim:#7C8794;
+    --term-rule:#2A323C;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0E1218;
+      --surface:#151A21;
+      --ink:#E3E8EE;
+      --muted:#98A2AF;
+      --rule:#252C36;
+      --accent:#E2AB45;
+      --accent-soft:rgba(226,171,69,.12);
+      --ok:#4FBFA0;
+      --warn:#E08050;
+      --term-bg:#0A0D12;
+      --term-ink:#DCE2EA;
+      --term-dim:#78838F;
+      --term-rule:#222A33;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0E1218;
+    --surface:#151A21;
+    --ink:#E3E8EE;
+    --muted:#98A2AF;
+    --rule:#252C36;
+    --accent:#E2AB45;
+    --accent-soft:rgba(226,171,69,.12);
+    --ok:#4FBFA0;
+    --warn:#E08050;
+    --term-bg:#0A0D12;
+    --term-ink:#DCE2EA;
+    --term-dim:#78838F;
+    --term-rule:#222A33;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+    font-size:15.5px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:900px;margin:0 auto;padding:40px 24px 96px}
+  h1,h2,h3,.eyebrow,.num{font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif}
+  h1{font-size:clamp(2.1rem,5vw,3.1rem);font-weight:700;line-height:1.03;letter-spacing:-.015em;margin:.15em 0 .3em;text-wrap:balance}
+  h2{font-size:1.45rem;font-weight:700;letter-spacing:-.01em;margin:0 0 .2em;text-wrap:balance}
+  h3{font-size:1.02rem;font-weight:600;margin:0 0 .35em}
+  p{margin:0 0 .85em;max-width:66ch}
+  a{color:var(--accent)}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.88em}
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:500;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--accent);
+  }
+  .lede{font-size:1.12rem;color:var(--muted);max-width:60ch}
+
+  header{border-bottom:1px solid var(--rule);padding-bottom:28px;margin-bottom:36px}
+  .goal{
+    display:flex;gap:14px;align-items:flex-start;margin-top:22px;
+    border-left:3px solid var(--accent);padding:2px 0 2px 14px;
+  }
+  .goal p{margin:0;font-size:.95rem}
+
+  .pins{width:100%;border-collapse:collapse;font-size:.92rem;margin:.4em 0 0}
+  .pins th{
+    text-align:left;font-family:"IBM Plex Mono",monospace;font-size:.68rem;
+    letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+    font-weight:500;padding:0 12px 8px 0;border-bottom:1px solid var(--rule);
+  }
+  .pins td{padding:9px 12px 9px 0;border-bottom:1px solid var(--rule);vertical-align:top;font-variant-numeric:tabular-nums}
+  .pins td:first-child{font-weight:500;white-space:nowrap}
+  .pins code{background:var(--accent-soft);color:var(--ink);padding:1px 5px;border-radius:3px}
+  .state{font-family:"IBM Plex Mono",monospace;font-size:.78rem;white-space:nowrap}
+  .state.bad{color:var(--warn)}
+  .state.good{color:var(--ok)}
+
+  section{margin-top:52px}
+  .rail{display:grid;grid-template-columns:56px 1fr;gap:0 20px;align-items:start}
+  .num{
+    font-size:1.5rem;font-weight:700;color:var(--accent);
+    font-variant-numeric:tabular-nums;line-height:1.1;padding-top:.05em;
+    border-top:2px solid var(--accent);
+  }
+  .step{margin-top:40px}
+  .step:first-of-type{margin-top:26px}
+
+  pre{
+    background:var(--term-bg);color:var(--term-ink);border-radius:5px;
+    margin:.9em 0;padding:14px 16px;overflow-x:auto;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.83rem;line-height:1.65;
+    border:1px solid var(--term-rule);
+  }
+  pre .c{color:var(--term-dim)}
+  pre .k{color:#E2AB45}
+  pre .e{color:#E08050}
+  .filename{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.06em;
+    color:var(--muted);margin:1.4em 0 -.5em;
+  }
+  .copy{
+    font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.08em;
+    text-transform:uppercase;background:none;border:1px solid var(--rule);
+    color:var(--muted);border-radius:3px;padding:3px 8px;cursor:pointer;
+  }
+  .copy:hover{color:var(--ink);border-color:var(--muted)}
+  .copy:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .check{
+    display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:baseline;
+    font-size:.93rem;margin:.5em 0;
+  }
+  .tick{color:var(--ok);font-family:"IBM Plex Mono",monospace}
+  .note{
+    background:var(--surface);border:1px solid var(--rule);border-radius:5px;
+    padding:16px 18px;margin:1.2em 0;font-size:.93rem;
+  }
+  .note.warn{border-left:3px solid var(--warn)}
+  .note.fwd{border-left:3px solid var(--accent)}
+  .note p:last-child{margin-bottom:0}
+  .note .eyebrow{display:block;margin-bottom:.4em;color:var(--muted)}
+  .note.warn .eyebrow{color:var(--warn)}
+
+  ul{margin:.4em 0 1em;padding-left:1.1em;max-width:64ch}
+  li{margin:.3em 0}
+
+  figure{margin:1.6em 0 0}
+  figcaption{font-size:.82rem;color:var(--muted);margin-top:10px;max-width:62ch}
+  svg{width:100%;height:auto;display:block}
+  .sv-surface{fill:var(--surface)}
+  .sv-rule{stroke:var(--rule)}
+  .sv-ink{fill:var(--ink)}
+  .sv-muted{fill:var(--muted)}
+  .sv-accent{fill:var(--accent)}
+  .sv-accent-s{stroke:var(--accent)}
+  .sv-warn{fill:var(--warn)}
+  .sv-warn-s{stroke:var(--warn)}
+  .sv-t{font-family:"IBM Plex Sans",sans-serif;font-size:12px}
+  .sv-m{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.04em}
+
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--rule);color:var(--muted);font-size:.9rem}
+  @media (max-width:640px){
+    .rail{grid-template-columns:1fr;gap:8px}
+    .num{border-top:none;padding-top:0}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="page">
+
+<header>
+  <span class="eyebrow">Phase 02 · ECK operator</span>
+  <h1>Pinning ECK 3.0.0</h1>
+  <p class="lede">The install method production used was fine. What was missing was a release
+  record — so "we are on 2.13.0 and 3.x exists" stayed invisible for two years.</p>
+  <div class="goal">
+    <p><strong>Done when:</strong> the operator pod is <code>Running</code> with a healthy reconcile
+    loop, the chart version is pinned in a values file in git, and you can say out loud why
+    <code>kubectl get deploy -n elastic-system</code> returns nothing.</p>
+  </div>
+</header>
+
+<section>
+  <h2>The version question, answered</h2>
+  <p>Step 1 of the phase doc asks you to pick the highest <code>3.0.x</code>. I pulled
+  <code>helm.elastic.co/index.yaml</code> and inspected the charts — here is what is actually
+  published, and where the pin comes from.</p>
+  <table class="pins">
+    <thead>
+      <tr><th>Fact</th><th>Finding</th><th></th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Highest 3.0.x</td>
+        <td><code>3.0.0</code> — it is the only one. There is no 3.0.1.</td>
+        <td class="state good">this is your pin</td>
+      </tr>
+      <tr>
+        <td>Also published</td>
+        <td>3.1.0, 3.2.0, 3.3.0–3.3.2, 3.4.0–3.4.1, <code>3.5.0</code> (latest)</td>
+        <td class="state">unsupported on 1.28</td>
+      </tr>
+      <tr>
+        <td>Chart guard</td>
+        <td><code>kubeVersion: '&gt;=1.21.0-0'</code> on 3.0.0, 3.1.0 and 3.2.0 alike</td>
+        <td class="state bad">enforces nothing</td>
+      </tr>
+      <tr>
+        <td>Operator image</td>
+        <td><code>docker.elastic.co/eck/eck-operator:3.0.0</code></td>
+        <td class="state">→ Phase 17 mirror</td>
+      </tr>
+      <tr>
+        <td>Helm on this machine</td>
+        <td>not installed</td>
+        <td class="state bad">step 01</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="note warn">
+    <span class="eyebrow">The guard you don't have</span>
+    <p>Every 3.x chart declares <code>kubeVersion: '&gt;=1.21.0-0'</code>. So Helm will install
+    <strong>3.5.0 onto your 1.28 cluster without a word of complaint</strong> — and it will
+    probably even come up. The 1.28 → ECK 3.0 boundary is Elastic's support matrix, enforced by
+    nobody. That is precisely why the version has to be a tracked fact in a file: nothing in the
+    tooling will catch the mistake for you.</p>
+  </div>
+  <p>Record <code>3.0.0</code> against <strong>Q6</strong> and the ECK row of <strong>D3</strong> in
+  <code>docs/00-decisions.md</code>, which currently reads "Exact patch tag TBC". That is now
+  answered.</p>
+</section>
+
+<section>
+  <h2>What you are installing</h2>
+  <figure>
+    <svg viewBox="0 0 820 356" role="img" aria-label="Diagram: kubectl apply of an Elasticsearch resource goes to the API server, which calls the validating webhook in elastic-system; the operator StatefulSet then reconciles workloads into the eck namespace. CRDs, ClusterRole and the webhook configuration are cluster-scoped.">
+      <!-- cluster-scoped band -->
+      <rect x="8" y="10" width="804" height="82" rx="6" class="sv-surface sv-rule" stroke-width="1" stroke-dasharray="4 4"/>
+      <text x="22" y="30" class="sv-m sv-muted">CLUSTER-SCOPED · SURVIVES NAMESPACE DELETION</text>
+      <rect x="22" y="40" width="176" height="40" rx="4" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="34" y="58" class="sv-t sv-ink" font-weight="600">10 CRDs</text>
+      <text x="34" y="73" class="sv-m sv-muted">elasticsearch, kibana, …</text>
+
+      <rect x="212" y="40" width="196" height="40" rx="4" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="224" y="58" class="sv-t sv-ink" font-weight="600">ClusterRole + Binding</text>
+      <text x="224" y="73" class="sv-m sv-muted">created even when scoped</text>
+
+      <rect x="422" y="40" width="290" height="40" rx="4" class="sv-surface sv-warn-s" stroke-width="1.5"/>
+      <text x="434" y="58" class="sv-t sv-ink" font-weight="600">ValidatingWebhookConfiguration</text>
+      <text x="434" y="73" class="sv-m sv-warn">failurePolicy: Ignore → fails open</text>
+
+      <!-- request path -->
+      <rect x="8" y="130" width="126" height="56" rx="4" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="22" y="153" class="sv-t sv-ink" font-weight="600">kubectl apply</text>
+      <text x="22" y="170" class="sv-m sv-muted">Elasticsearch</text>
+
+      <path d="M134 158 H186" class="sv-accent-s" stroke-width="1.5" fill="none"/>
+      <path d="M186 158 l-8 -4 v8 z" class="sv-accent"/>
+
+      <rect x="192" y="130" width="126" height="56" rx="4" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="206" y="153" class="sv-t sv-ink" font-weight="600">API server</text>
+      <text x="206" y="170" class="sv-m sv-muted">admission chain</text>
+
+      <!-- admission call up to webhook cfg and into operator -->
+      <path d="M255 130 V96" class="sv-warn-s" stroke-width="1.5" fill="none" stroke-dasharray="3 3"/>
+      <path d="M255 96 l-4 8 h8 z" class="sv-warn"/>
+      <text x="264" y="112" class="sv-m sv-warn">1. validate</text>
+
+      <path d="M318 158 H370" class="sv-accent-s" stroke-width="1.5" fill="none"/>
+      <path d="M370 158 l-8 -4 v8 z" class="sv-accent"/>
+      <text x="322" y="150" class="sv-m sv-accent">:9443</text>
+
+      <!-- elastic-system -->
+      <rect x="376" y="112" width="240" height="128" rx="6" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="390" y="132" class="sv-m sv-accent">ns/elastic-system</text>
+      <rect x="390" y="142" width="212" height="44" rx="4" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="402" y="160" class="sv-t sv-ink" font-weight="600">sts/elastic-operator</text>
+      <text x="402" y="176" class="sv-m sv-muted">StatefulSet · 1 replica</text>
+      <text x="390" y="206" class="sv-m sv-muted">svc · configmap · secret</text>
+      <text x="390" y="224" class="sv-m sv-muted">serviceaccount</text>
+
+      <!-- reconcile arrow -->
+      <path d="M496 240 V276" class="sv-accent-s" stroke-width="1.5" fill="none"/>
+      <path d="M496 276 l-4 -8 h8 z" class="sv-accent"/>
+      <text x="506" y="264" class="sv-m sv-accent">2. reconcile</text>
+
+      <!-- eck namespace -->
+      <rect x="192" y="282" width="424" height="64" rx="6" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="206" y="302" class="sv-m sv-accent">ns/eck</text>
+      <text x="206" y="322" class="sv-t sv-ink" font-weight="600">Elasticsearch / Kibana objects → StatefulSets, Pods, PVCs, Secrets</text>
+      <text x="206" y="338" class="sv-m sv-muted">you create this namespace yourself · Phase 03 fills it</text>
+
+      <!-- notes right -->
+      <text x="640" y="132" class="sv-m sv-muted">watches only the</text>
+      <text x="640" y="146" class="sv-m sv-muted">namespaces named in</text>
+      <text x="640" y="160" class="sv-m sv-ink">managedNamespaces</text>
+      <text x="640" y="180" class="sv-m sv-muted">(operator config,</text>
+      <text x="640" y="194" class="sv-m sv-muted">not RBAC)</text>
+    </svg>
+    <figcaption>Two things to take from this. The operator is a <strong>StatefulSet</strong>, which
+    is why <code>kubectl get deploy -n elastic-system</code> looks empty and why someone wrote
+    "probably can delete" in <code>current-infra.md:6</code>. And the CRDs, ClusterRole and webhook
+    configuration are cluster-scoped — deleting the namespace leaves all three behind.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Run it</h2>
+
+  <div class="step rail">
+    <div class="num">01</div>
+    <div>
+      <h3>Install Helm</h3>
+      <p>Not on this machine yet, and winget is the only package manager you have.</p>
+      <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>winget install --id Helm.Helm --source winget --accept-package-agreements
+<span class="c"># new terminal, so PATH picks it up</span>
+helm version   <span class="c"># expect v3.14+</span></pre>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">02</div>
+    <div>
+      <h3>Add the repo and see the versions for yourself</h3>
+      <p>Don't take my table on faith — this is the command that produced it.</p>
+      <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>helm repo add elastic https://helm.elastic.co
+helm repo update elastic
+
+<span class="c"># PowerShell has no grep. Select-String is the equivalent.</span>
+helm search repo elastic/eck-operator --versions `
+  | Select-String -Pattern "eck-operator\s" | Select-Object -First 12</pre>
+<pre><span class="c">NAME                    CHART VERSION  APP VERSION  DESCRIPTION</span>
+elastic/eck-operator    3.5.0          3.5.0        ...
+elastic/eck-operator    3.4.1          3.4.1        ...
+elastic/eck-operator    3.4.0          3.4.0        ...
+elastic/eck-operator    3.3.2          3.3.2        ...
+<span class="c">    ...</span>
+elastic/eck-operator    3.1.0          3.1.0        ...
+elastic/eck-operator    3.0.0          3.0.0        <span class="k">← the pin</span>
+elastic/eck-operator    2.16.1         2.16.1       ...</pre>
+      <p>The jump from <code>3.0.0</code> straight to <code>3.1.0</code> is the finding: the 3.0 line
+      got no patches. Whatever bugs shipped in 3.0.0 are the bugs you will run.</p>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">03</div>
+    <div>
+      <h3>Create the workload namespace first</h3>
+      <p><code>managedNamespaces</code> tells the operator what to watch; it does <em>not</em> create
+      anything. Naming a namespace that does not exist gives you an operator that starts cleanly and
+      reconciles nothing.</p>
+      <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl create namespace eck</pre>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">04</div>
+    <div>
+      <h3>Install, pinned, from a values file</h3>
+      <p>Already written to <code>phase-2/helm/eck-operator/values.yaml</code>. Every key below was
+      checked against the 3.0.0 chart, not guessed from the docs.</p>
+      <div class="filename"><span>phase-2/helm/eck-operator/values.yaml</span><button class="copy" type="button">copy</button></div>
+<pre><span class="c"># Restrict the operator to the workload namespace. Empty list = all namespaces.</span>
+<span class="c"># Does not create the namespace, and does not narrow RBAC while</span>
+<span class="c"># createClusterScopedResources is true — scoping is operator config, not RBAC.</span>
+<span class="k">managedNamespaces:</span>
+  - eck
+
+<span class="c"># See the uninstall warning below before trusting this in production.</span>
+<span class="k">installCRDs:</span> true
+
+<span class="k">replicaCount:</span> 1
+
+<span class="k">image:</span>
+  <span class="k">repository:</span> docker.elastic.co/eck/eck-operator
+  <span class="c"># Defaults to appVersion; stated so it is greppable for the airgap mirror.</span>
+  <span class="k">tag:</span> <span class="c">"3.0.0"</span>
+  <span class="k">pullPolicy:</span> IfNotPresent
+
+<span class="k">resources:</span>
+  <span class="k">limits:</span>   { <span class="k">cpu:</span> 1, <span class="k">memory:</span> 1Gi }
+  <span class="k">requests:</span> { <span class="k">cpu:</span> 100m, <span class="k">memory:</span> 150Mi }
+
+<span class="k">webhook:</span>
+  <span class="k">enabled:</span> true
+  <span class="k">manageCerts:</span> true
+  <span class="c"># Chart default. Fails OPEN — see the sharp edge below.</span>
+  <span class="k">failurePolicy:</span> Ignore
+
+<span class="k">telemetry:</span>
+  <span class="c"># No egress from the target environment.</span>
+  <span class="k">disabled:</span> true
+
+<span class="k">config:</span>
+  <span class="k">logVerbosity:</span> <span class="c">"0"</span></pre>
+      <div class="filename"><span>PowerShell · from the repo root</span><button class="copy" type="button">copy</button></div>
+<pre>helm install elastic-operator elastic/eck-operator `
+  --namespace elastic-system --create-namespace `
+  --version 3.0.0 `
+  -f phase-2\helm\eck-operator\values.yaml
+
+<span class="c"># the release record that production never had</span>
+helm list -n elastic-system
+kubectl rollout status sts/elastic-operator -n elastic-system --timeout=180s</pre>
+      <div class="note warn">
+        <span class="eyebrow">--version is not optional</span>
+        <p>Omit it and Helm resolves to <code>3.5.0</code> today and something else next month. That
+        single missing flag is the difference between this install and the one you are replacing.
+        Do a <code>--dry-run</code> first if you want to read the rendered objects before they land.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">05</div>
+    <div>
+      <h3>Look at what you just created</h3>
+      <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl get all -n elastic-system
+kubectl get crd | Select-String elastic
+kubectl get validatingwebhookconfiguration | Select-String elastic
+kubectl get clusterrole,clusterrolebinding | Select-String elastic
+
+<span class="c"># the point of the phase, in one command</span>
+kubectl get deploy -n elastic-system   <span class="c"># No resources found. Correct.</span>
+kubectl get sts -n elastic-system      <span class="c"># elastic-operator   1/1</span></pre>
+      <div class="check"><span class="tick">✓</span><span>One <code>StatefulSet</code>, one pod, one <code>Service</code>, a ConfigMap and a Secret</span></div>
+      <div class="check"><span class="tick">✓</span><span>Ten CRDs: elasticsearch, kibana, apmserver, beat, agent, logstash, enterprisesearch, elasticmapsserver, stackconfigpolicy, elasticsearchautoscaler</span></div>
+      <div class="check"><span class="tick">✓</span><span><code>elastic-webhook.k8s.elastic.co</code> present as a cluster-scoped object</span></div>
+      <div class="check"><span class="tick">✓</span><span>ClusterRole and ClusterRoleBinding exist — <em>even though</em> the operator is scoped to <code>eck</code></span></div>
+      <p>That last one is worth sitting with. <code>createClusterScopedResources</code> defaults to
+      <code>true</code>, so the operator holds cluster-wide RBAC and simply chooses to watch one
+      namespace, because scoping is passed as operator config. Flip it to <code>false</code> and the
+      chart emits per-namespace <code>Role</code>/<code>RoleBinding</code> instead — real
+      least-privilege, and a decision to make deliberately in Phase 18.</p>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">06</div>
+    <div>
+      <h3>Watch it think</h3>
+      <p>Leave this running in a second terminal for the rest of Part 1. Watching reconciliation as
+      you apply manifests is the fastest way to build the mental model.</p>
+      <div class="filename"><span>PowerShell · second terminal</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl logs -n elastic-system sts/elastic-operator -f</pre>
+      <p>A healthy idle loop is quiet: <code>"accepting leadership"</code> at startup, then periodic
+      reconcile entries with <code>"iteration"</code> and a namespace. Errors mentioning
+      <code>certificate</code> in the first thirty seconds are the operator minting its own webhook
+      certs and are expected.</p>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">07</div>
+    <div>
+      <h3>The deliberate exercise: make the webhook talk to you</h3>
+      <p>Apply a resource with a version that does not exist. The rejection does not come from the
+      API server or from Elasticsearch — nothing has been created yet.</p>
+      <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>@'
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: bogus
+  namespace: eck
+spec:
+  version: 9.99.0
+  nodeSets:
+  - name: default
+    count: 1
+'@ | kubectl apply -f -</pre>
+<pre><span class="e">Error from server (Forbidden): error when creating "STDIN":
+admission webhook "elastic-es-validation-v1.k8s.elastic.co" denied the request:
+Elasticsearch.elasticsearch.k8s.elastic.co "bogus" is invalid:
+spec.version: Invalid value: "9.99.0": Unsupported version</span></pre>
+      <p>The webhook name in that message is the component you just installed. Now do the same
+      thing with <code>nodeSets: []</code>, or two nodeSets sharing a name, and read those messages
+      too — this is the validation you get for free, and the reason a broken webhook is worse than
+      no webhook.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Two sharp edges the phase doc understates</h2>
+  <div class="note warn">
+    <span class="eyebrow">The webhook fails open, not closed</span>
+    <p>The doc says a webhook left behind without its operator makes <code>kubectl apply</code>
+    "hang or be rejected". With the chart default <code>failurePolicy: Ignore</code>, the opposite
+    happens: after a ~10 second timeout per request, admission is <strong>allowed through
+    unvalidated</strong>. Quieter and arguably worse — invalid specs reach a cluster with nothing
+    running to reconcile them. Set <code>failurePolicy: Fail</code> and the doc's description
+    becomes literally true, cluster-wide, for every Elastic resource. Know which one production has
+    before anyone touches <code>elastic-system</code>.</p>
+  </div>
+  <div class="note warn">
+    <span class="eyebrow">helm uninstall deletes your data</span>
+    <p>With <code>installCRDs: true</code>, the CRDs are ordinary templates from the bundled
+    <code>eck-operator-crds</code> subchart — so they are part of the release, and
+    <code>helm uninstall elastic-operator</code> removes them. Deleting a CRD deletes every object
+    of that kind: every <code>Elasticsearch</code>, in every namespace, in one command. Elastic's own
+    values file warns about this. For production, split it:</p>
+    <div class="filename"><span>the production shape, for Phase 18</span><button class="copy" type="button">copy</button></div>
+<pre>helm install eck-crds elastic/eck-operator-crds --version 3.0.0
+helm install elastic-operator elastic/eck-operator --version 3.0.0 `
+  --set installCRDs=false -f values.yaml</pre>
+    <p>In the lab, keep <code>installCRDs: true</code> — you <em>want</em> teardown to be one
+    command. Just know which behaviour you signed up for.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Done when</h2>
+  <div class="check"><span class="tick">✓</span><span><code>sts/elastic-operator</code> is <code>1/1</code> and its log shows a quiet reconcile loop</span></div>
+  <div class="check"><span class="tick">✓</span><span>You can list the ten CRDs and explain what the webhook sits in front of</span></div>
+  <div class="check"><span class="tick">✓</span><span><code>3.0.0</code> is pinned in <code>phase-2/helm/eck-operator/values.yaml</code> and recorded in <code>00-decisions.md</code></span></div>
+  <div class="check"><span class="tick">✓</span><span>You can answer "why is there no Deployment in elastic-system?" without looking it up</span></div>
+</section>
+
+<footer>
+  <p>Next: <strong>Phase 03 — Elasticsearch basics</strong>, which is where
+  <code>vm.max_map_count=262144</code> on the <code>docker-desktop</code> WSL distro stops being a
+  footnote. Log what broke here, with exact error text, in <code>docs/02-eck-operator.md</code>
+  under Notes.</p>
+</footer>
+
+</div>
+
+<script>
+  document.querySelectorAll(".copy").forEach(function (btn) {
+    btn.addEventListener("click", async function () {
+      var pre = btn.closest(".filename") && btn.closest(".filename").nextElementSibling;
+      if (!pre || pre.tagName !== "PRE") return;
+      var text = pre.innerText;
+      var done = false;
+      try {
+        await navigator.clipboard.writeText(text);
+        done = true;
+      } catch (e) {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          done = document.execCommand("copy");
+          document.body.removeChild(ta);
+        } catch (e2) { done = false; }
+      }
+      var was = btn.textContent;
+      btn.textContent = done ? "copied" : "select it";
+      setTimeout(function () { btn.textContent = was; }, 1600);
+    });
+  });
+</script>

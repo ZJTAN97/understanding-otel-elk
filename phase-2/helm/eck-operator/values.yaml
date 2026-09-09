@@ -1,0 +1,55 @@
+# ECK operator — chart eck-operator 3.0.0 (appVersion 3.0.0)
+#
+# Pin lives in the install command, not here; see phase-2 guide and 00-decisions.md D3.
+# Chart 3.0.0 is the ONLY 3.0.x release — there is no 3.0.1. The chart's own
+# kubeVersion constraint is '>=1.21.0-0', so Helm will happily install 3.5.0 onto
+# Kubernetes 1.28. The 3.0 pin comes from Elastic's support matrix, not from a guard.
+
+# Restrict the operator to the workload namespace. Empty list = all namespaces.
+# NOTE: this does not create the namespace (the chart only does that when
+# softMultiTenancy.enabled), and it does not narrow RBAC while
+# createClusterScopedResources is true — scoping is enforced by the operator's
+# own --namespaces config, not by the ClusterRole.
+managedNamespaces:
+  - eck
+
+# CRDs are installed by the bundled eck-operator-crds subchart as ordinary
+# templates. Consequence: `helm uninstall` DELETES the CRDs, and deleting a CRD
+# deletes every Elasticsearch/Kibana object defined by it. Cluster-wide, in one
+# command. In production, prefer installCRDs: false plus a separately managed
+# eck-operator-crds release.
+installCRDs: true
+
+replicaCount: 1
+
+image:
+  repository: docker.elastic.co/eck/eck-operator
+  # Tag defaults to appVersion. Stated explicitly so the image is greppable
+  # for the Phase 17 airgap mirror list.
+  tag: "3.0.0"
+  pullPolicy: IfNotPresent
+
+resources:
+  limits:
+    cpu: 1
+    memory: 1Gi
+  requests:
+    cpu: 100m
+    memory: 150Mi
+
+webhook:
+  enabled: true
+  manageCerts: true
+  # Chart default. The webhook FAILS OPEN: if the operator is unreachable,
+  # admission is allowed through unvalidated rather than blocked. Setting this
+  # to Fail makes a missing operator break every Elastic resource apply
+  # cluster-wide — the failure mode worth understanding before touching prod.
+  failurePolicy: Ignore
+
+telemetry:
+  # No egress from the target environment; do not attempt phone-home.
+  disabled: true
+
+config:
+  # 0 = errors, warnings, info. Raise above 0 for reconcile debug detail.
+  logVerbosity: "0"
