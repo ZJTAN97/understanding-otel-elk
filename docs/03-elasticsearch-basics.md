@@ -93,10 +93,23 @@ spec:
 Three things worth understanding rather than copying:
 
 - **`node.store.allow_mmap: false`** — Elasticsearch memory-maps index files and wants
-  `vm.max_map_count=262144`. On Windows that sysctl lives inside the WSL2 VM and does not
-  persist across restarts. Setting `allow_mmap: false` sidesteps it entirely at some
-  performance cost. Correct for a laptop, **wrong for production** — set the sysctl there
-  instead. The original `k3d-plan.md` did both, which is redundant.
+  `vm.max_map_count=262144`. On a laptop that sysctl lives inside the Docker Desktop VM,
+  not in the k3d containers, and does not persist across restarts either way:
+
+  ```
+  # Windows (PowerShell) — the docker-desktop WSL distro
+  wsl -d docker-desktop sysctl -w vm.max_map_count=262144
+
+  # macOS (zsh) — the LinuxKit VM, entered via a privileged container
+  docker run --rm --privileged --pid=host alpine \
+    nsenter -t 1 -m -u -n -i sysctl vm.max_map_count          # check first
+  docker run --rm --privileged --pid=host alpine \
+    nsenter -t 1 -m -u -n -i sysctl -w vm.max_map_count=262144
+  ```
+
+  Setting `allow_mmap: false` sidesteps the whole thing at some performance cost. Correct
+  for a laptop, **wrong for production** — set the sysctl there instead. The original
+  `k3d-plan.md` did both, which is redundant.
 - **`volumeClaimTemplates` is explicit on purpose.** Omit it and ECK defaults to a 1Gi
   claim. Declaring it means you will notice when you need to change it — and Phase 06 has
   a lesson about what happens to these volumes.

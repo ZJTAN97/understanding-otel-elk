@@ -36,13 +36,33 @@ on 1.28. The lab has to match, or it is a demo rather than a rehearsal.
 ### 1. Fix the kubectl skew
 
 Install a `kubectl` in the 1.27–1.29 range. Five minutes, and it removes a whole class of
-confusing failures before they happen.
+confusing failures before they happen. Put it early on `PATH`, ahead of the one Docker
+Desktop ships.
+
+```
+# Windows (PowerShell)
+New-Item -ItemType Directory -Force "$env:USERPROFILE\bin" | Out-Null
+curl.exe -Lo "$env:USERPROFILE\bin\kubectl.exe" `
+  https://dl.k8s.io/release/v1.29.15/bin/windows/amd64/kubectl.exe
+$env:PATH = "$env:USERPROFILE\bin;$env:PATH"
+```
+
+```
+# macOS (zsh) — arm64 on Apple silicon, amd64 on Intel
+mkdir -p ~/bin
+ARCH=$([ "$(uname -m)" = "arm64" ] && echo arm64 || echo amd64)
+curl -Lo ~/bin/kubectl "https://dl.k8s.io/release/v1.29.15/bin/darwin/$ARCH/kubectl"
+chmod +x ~/bin/kubectl
+export PATH="$HOME/bin:$PATH"          # and append the same line to ~/.zshrc
+```
 
 ```
 kubectl version
 ```
 
-Confirm client and server are within one minor of each other.
+Confirm client and server are within one minor of each other. If the client version has
+not changed, something earlier on `PATH` is winning — `Get-Command kubectl -All` on
+Windows, `which -a kubectl` then `hash -r` on macOS.
 
 ### 2. Give Docker enough memory
 

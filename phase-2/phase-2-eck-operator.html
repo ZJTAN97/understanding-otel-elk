@@ -162,7 +162,33 @@
     .num{border-top:none;padding-top:0}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  /* os lanes */
+  .osbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:20px}
+  .osbar .lbl{
+    font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--muted);margin-right:4px;
+  }
+  .osbtn{
+    font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.06em;
+    background:none;border:1px solid var(--rule);color:var(--muted);
+    border-radius:3px;padding:4px 10px;cursor:pointer;
+  }
+  .osbtn[aria-pressed="true"]{color:var(--ink);border-color:var(--accent);background:var(--accent-soft)}
+  .osbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  :root[data-os="mac"] .os-win{display:none}
+  :root:not([data-os="mac"]) .os-mac{display:none}
 </style>
+<script>
+  (function () {
+    var os = null;
+    try { os = localStorage.getItem("os"); } catch (e) {}
+    if (os !== "mac" && os !== "win") {
+      os = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "mac" : "win";
+    }
+    document.documentElement.setAttribute("data-os", os);
+  })();
+</script>
 
 <div class="page">
 
@@ -175,6 +201,11 @@
     <p><strong>Done when:</strong> the operator pod is <code>Running</code> with a healthy reconcile
     loop, the chart version is pinned in a values file in git, and you can say out loud why
     <code>kubectl get deploy -n elastic-system</code> returns nothing.</p>
+  </div>
+  <div class="osbar" role="group" aria-label="Choose the shell the snippets are written for">
+    <span class="lbl">Snippets for</span>
+    <button class="osbtn" type="button" data-os="win" aria-pressed="false">Windows &middot; PowerShell</button>
+    <button class="osbtn" type="button" data-os="mac" aria-pressed="false">macOS &middot; zsh</button>
   </div>
 </header>
 
@@ -309,11 +340,26 @@
     <div class="num">01</div>
     <div>
       <h3>Install Helm</h3>
+      <div class="os os-win">
       <p>Not on this machine yet, and winget is the only package manager you have.</p>
       <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
 <pre>winget install --id Helm.Helm --source winget --accept-package-agreements
 <span class="c"># new terminal, so PATH picks it up</span>
 helm version   <span class="c"># expect v3.14+</span></pre>
+      </div>
+      <div class="os os-mac">
+      <p>Homebrew has it. Unlike kubectl there is no skew window to respect — Helm 3 talks to any
+      supported API server — so the current formula is fine.</p>
+      <div class="filename"><span>zsh</span><button class="copy" type="button">copy</button></div>
+<pre>brew install helm
+helm version   <span class="c"># expect v3.14+</span></pre>
+      <p>No Homebrew? The tarball works and needs no admin rights:</p>
+      <div class="filename"><span>zsh</span><button class="copy" type="button">copy</button></div>
+<pre>ARCH=$([ "$(uname -m)" = "arm64" ] &amp;&amp; echo arm64 || echo amd64)
+curl -fsSL "https://get.helm.sh/helm-v3.14.4-darwin-$ARCH.tar.gz" | tar -xz -C /tmp
+mkdir -p ~/bin &amp;&amp; mv "/tmp/darwin-$ARCH/helm" ~/bin/helm
+helm version</pre>
+      </div>
     </div>
   </div>
 
@@ -322,6 +368,7 @@ helm version   <span class="c"># expect v3.14+</span></pre>
     <div>
       <h3>Add the repo and see the versions for yourself</h3>
       <p>Don't take my table on faith — this is the command that produced it.</p>
+      <div class="os os-win">
       <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
 <pre>helm repo add elastic https://helm.elastic.co
 helm repo update elastic
@@ -329,6 +376,16 @@ helm repo update elastic
 <span class="c"># PowerShell has no grep. Select-String is the equivalent.</span>
 helm search repo elastic/eck-operator --versions `
   | Select-String -Pattern "eck-operator\s" | Select-Object -First 12</pre>
+      </div>
+      <div class="os os-mac">
+      <div class="filename"><span>zsh</span><button class="copy" type="button">copy</button></div>
+<pre>helm repo add elastic https://helm.elastic.co
+helm repo update elastic
+
+<span class="c"># the trailing space keeps eck-operator-crds out of the list</span>
+helm search repo elastic/eck-operator --versions \
+  | grep -E "^elastic/eck-operator " | head -12</pre>
+      </div>
 <pre><span class="c">NAME                    CHART VERSION  APP VERSION  DESCRIPTION</span>
 elastic/eck-operator    3.5.0          3.5.0        ...
 elastic/eck-operator    3.4.1          3.4.1        ...
@@ -350,7 +407,7 @@ elastic/eck-operator    2.16.1         2.16.1       ...</pre>
       <p><code>managedNamespaces</code> tells the operator what to watch; it does <em>not</em> create
       anything. Naming a namespace that does not exist gives you an operator that starts cleanly and
       reconciles nothing.</p>
-      <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+      <div class="filename"><span>PowerShell or zsh — same command</span><button class="copy" type="button">copy</button></div>
 <pre>kubectl create namespace eck</pre>
     </div>
   </div>
@@ -395,6 +452,7 @@ elastic/eck-operator    2.16.1         2.16.1       ...</pre>
 
 <span class="k">config:</span>
   <span class="k">logVerbosity:</span> <span class="c">"0"</span></pre>
+      <div class="os os-win">
       <div class="filename"><span>PowerShell · from the repo root</span><button class="copy" type="button">copy</button></div>
 <pre>helm install elastic-operator elastic/eck-operator `
   --namespace elastic-system --create-namespace `
@@ -404,6 +462,18 @@ elastic/eck-operator    2.16.1         2.16.1       ...</pre>
 <span class="c"># the release record that production never had</span>
 helm list -n elastic-system
 kubectl rollout status sts/elastic-operator -n elastic-system --timeout=180s</pre>
+      </div>
+      <div class="os os-mac">
+      <div class="filename"><span>zsh · from the repo root</span><button class="copy" type="button">copy</button></div>
+<pre>helm install elastic-operator elastic/eck-operator \
+  --namespace elastic-system --create-namespace \
+  --version 3.0.0 \
+  -f phase-2/helm/eck-operator/values.yaml
+
+<span class="c"># the release record that production never had</span>
+helm list -n elastic-system
+kubectl rollout status sts/elastic-operator -n elastic-system --timeout=180s</pre>
+      </div>
       <div class="note warn">
         <span class="eyebrow">--version is not optional</span>
         <p>Omit it and Helm resolves to <code>3.5.0</code> today and something else next month. That
@@ -417,6 +487,7 @@ kubectl rollout status sts/elastic-operator -n elastic-system --timeout=180s</pr
     <div class="num">05</div>
     <div>
       <h3>Look at what you just created</h3>
+      <div class="os os-win">
       <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
 <pre>kubectl get all -n elastic-system
 kubectl get crd | Select-String elastic
@@ -426,6 +497,18 @@ kubectl get clusterrole,clusterrolebinding | Select-String elastic
 <span class="c"># the point of the phase, in one command</span>
 kubectl get deploy -n elastic-system   <span class="c"># No resources found. Correct.</span>
 kubectl get sts -n elastic-system      <span class="c"># elastic-operator   1/1</span></pre>
+      </div>
+      <div class="os os-mac">
+      <div class="filename"><span>zsh</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl get all -n elastic-system
+kubectl get crd | grep elastic
+kubectl get validatingwebhookconfiguration | grep elastic
+kubectl get clusterrole,clusterrolebinding | grep elastic
+
+<span class="c"># the point of the phase, in one command</span>
+kubectl get deploy -n elastic-system   <span class="c"># No resources found. Correct.</span>
+kubectl get sts -n elastic-system      <span class="c"># elastic-operator   1/1</span></pre>
+      </div>
       <div class="check"><span class="tick">✓</span><span>One <code>StatefulSet</code>, one pod, one <code>Service</code>, a ConfigMap and a Secret</span></div>
       <div class="check"><span class="tick">✓</span><span>Ten CRDs: elasticsearch, kibana, apmserver, beat, agent, logstash, enterprisesearch, elasticmapsserver, stackconfigpolicy, elasticsearchautoscaler</span></div>
       <div class="check"><span class="tick">✓</span><span><code>elastic-webhook.k8s.elastic.co</code> present as a cluster-scoped object</span></div>
@@ -444,7 +527,7 @@ kubectl get sts -n elastic-system      <span class="c"># elastic-operator   1/1<
       <h3>Watch it think</h3>
       <p>Leave this running in a second terminal for the rest of Part 1. Watching reconciliation as
       you apply manifests is the fastest way to build the mental model.</p>
-      <div class="filename"><span>PowerShell · second terminal</span><button class="copy" type="button">copy</button></div>
+      <div class="filename"><span>PowerShell or zsh · second terminal</span><button class="copy" type="button">copy</button></div>
 <pre>kubectl logs -n elastic-system sts/elastic-operator -f</pre>
       <p>A healthy idle loop is quiet: <code>"accepting leadership"</code> at startup, then periodic
       reconcile entries with <code>"iteration"</code> and a namespace. Errors mentioning
@@ -459,6 +542,7 @@ kubectl get sts -n elastic-system      <span class="c"># elastic-operator   1/1<
       <h3>The deliberate exercise: make the webhook talk to you</h3>
       <p>Apply a resource with a version that does not exist. The rejection does not come from the
       API server or from Elasticsearch — nothing has been created yet.</p>
+      <div class="os os-win">
       <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
 <pre>@'
 apiVersion: elasticsearch.k8s.elastic.co/v1
@@ -472,6 +556,24 @@ spec:
   - name: default
     count: 1
 '@ | kubectl apply -f -</pre>
+      </div>
+      <div class="os os-mac">
+      <div class="filename"><span>zsh</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl apply -f - &lt;&lt;'EOF'
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: bogus
+  namespace: eck
+spec:
+  version: 9.99.0
+  nodeSets:
+  - name: default
+    count: 1
+EOF</pre>
+      <p>Quote the delimiter (<code>&lt;&lt;'EOF'</code>). Unquoted, zsh expands
+      <code>$</code> and backticks inside the manifest.</p>
+      </div>
 <pre><span class="e">Error from server (Forbidden): error when creating "STDIN":
 admission webhook "elastic-es-validation-v1.k8s.elastic.co" denied the request:
 Elasticsearch.elasticsearch.k8s.elastic.co "bogus" is invalid:
@@ -503,10 +605,18 @@ spec.version: Invalid value: "9.99.0": Unsupported version</span></pre>
     <code>helm uninstall elastic-operator</code> removes them. Deleting a CRD deletes every object
     of that kind: every <code>Elasticsearch</code>, in every namespace, in one command. Elastic's own
     values file warns about this. For production, split it:</p>
+      <div class="os os-win">
     <div class="filename"><span>the production shape, for Phase 18</span><button class="copy" type="button">copy</button></div>
 <pre>helm install eck-crds elastic/eck-operator-crds --version 3.0.0
 helm install elastic-operator elastic/eck-operator --version 3.0.0 `
   --set installCRDs=false -f values.yaml</pre>
+      </div>
+      <div class="os os-mac">
+    <div class="filename"><span>the production shape, for Phase 18</span><button class="copy" type="button">copy</button></div>
+<pre>helm install eck-crds elastic/eck-operator-crds --version 3.0.0
+helm install elastic-operator elastic/eck-operator --version 3.0.0 \
+  --set installCRDs=false -f values.yaml</pre>
+      </div>
     <p>In the lab, keep <code>installCRDs: true</code> — you <em>want</em> teardown to be one
     command. Just know which behaviour you signed up for.</p>
   </div>
@@ -522,14 +632,29 @@ helm install elastic-operator elastic/eck-operator --version 3.0.0 `
 
 <footer>
   <p>Next: <strong>Phase 03 — Elasticsearch basics</strong>, which is where
-  <code>vm.max_map_count=262144</code> on the <code>docker-desktop</code> WSL distro stops being a
-  footnote. Log what broke here, with exact error text, in <code>docs/02-eck-operator.md</code>
+  <code>vm.max_map_count=262144</code> inside the Docker Desktop VM — the <code>docker-desktop</code>
+  WSL distro on Windows, the LinuxKit VM on macOS — stops being a footnote. Log what broke here, with exact error text, in <code>docs/02-eck-operator.md</code>
   under Notes.</p>
 </footer>
 
 </div>
 
 <script>
+  function syncOs() {
+    var cur = document.documentElement.getAttribute("data-os");
+    document.querySelectorAll(".osbtn").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.os === cur));
+    });
+  }
+  document.querySelectorAll(".osbtn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.documentElement.setAttribute("data-os", btn.dataset.os);
+      try { localStorage.setItem("os", btn.dataset.os); } catch (e) {}
+      syncOs();
+    });
+  });
+  syncOs();
+
   document.querySelectorAll(".copy").forEach(function (btn) {
     btn.addEventListener("click", async function () {
       var pre = btn.closest(".filename") && btn.closest(".filename").nextElementSibling;
