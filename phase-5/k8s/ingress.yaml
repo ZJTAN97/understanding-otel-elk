@@ -1,0 +1,42 @@
+# Browser --http--> Traefik --https--> Kibana pod.
+#
+# Two TLS layers, and only the second one is ECK's. In the lab the browser hop
+# is plain HTTP so the lesson stays about the backend hop; production terminates
+# a real certificate at the ingress instead.
+#
+# CRD group check before applying — k3s 1.28 ships Traefik v2.10:
+#   kubectl get crd | grep serverstransport
+#   traefik.containo.us  -> Traefik v2.x  (this file)
+#   traefik.io           -> Traefik v3.x  (change apiVersion below)
+apiVersion: traefik.containo.us/v1alpha1
+kind: ServersTransport
+metadata:
+  name: kibana-tls
+  namespace: eck
+spec:
+  # A SAN on the ECK-issued certificate. Traefik dials the pod IP, so without
+  # this the hostname check fails even though the CA is trusted.
+  serverName: obs-kb-http.eck.svc
+  rootCAsSecrets:
+    - obs-kb-http-certs-public
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kibana
+  namespace: eck
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: kibana.lab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: obs-kb-http
+                port:
+                  number: 5601

@@ -1,0 +1,670 @@
+<title>Associations and the 502</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#EDF0F3;
+    --surface:#FFFFFF;
+    --ink:#12161C;
+    --muted:#58626F;
+    --rule:#D3D9E0;
+    --accent:#8A5D00;
+    --accent-soft:rgba(138,93,0,.10);
+    --ok:#0F6B54;
+    --warn:#9C3B12;
+    --term-bg:#151A21;
+    --term-ink:#DCE2EA;
+    --term-dim:#7C8794;
+    --term-rule:#2A323C;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0E1218;
+      --surface:#151A21;
+      --ink:#E3E8EE;
+      --muted:#98A2AF;
+      --rule:#252C36;
+      --accent:#E2AB45;
+      --accent-soft:rgba(226,171,69,.12);
+      --ok:#4FBFA0;
+      --warn:#E08050;
+      --term-bg:#0A0D12;
+      --term-ink:#DCE2EA;
+      --term-dim:#78838F;
+      --term-rule:#222A33;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0E1218;
+    --surface:#151A21;
+    --ink:#E3E8EE;
+    --muted:#98A2AF;
+    --rule:#252C36;
+    --accent:#E2AB45;
+    --accent-soft:rgba(226,171,69,.12);
+    --ok:#4FBFA0;
+    --warn:#E08050;
+    --term-bg:#0A0D12;
+    --term-ink:#DCE2EA;
+    --term-dim:#78838F;
+    --term-rule:#222A33;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+    font-size:15.5px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:900px;margin:0 auto;padding:40px 24px 96px}
+  h1,h2,h3,.eyebrow,.num{font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif}
+  h1{font-size:clamp(2.1rem,5vw,3.1rem);font-weight:700;line-height:1.03;letter-spacing:-.015em;margin:.15em 0 .3em;text-wrap:balance}
+  h2{font-size:1.45rem;font-weight:700;letter-spacing:-.01em;margin:0 0 .2em;text-wrap:balance}
+  h3{font-size:1.02rem;font-weight:600;margin:0 0 .35em}
+  p{margin:0 0 .85em;max-width:66ch}
+  a{color:var(--accent)}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.88em}
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:500;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--accent);
+  }
+  .lede{font-size:1.12rem;color:var(--muted);max-width:60ch}
+
+  header{border-bottom:1px solid var(--rule);padding-bottom:28px;margin-bottom:36px}
+  .goal{
+    display:flex;gap:14px;align-items:flex-start;margin-top:22px;
+    border-left:3px solid var(--accent);padding:2px 0 2px 14px;
+  }
+  .goal p{margin:0;font-size:.95rem}
+
+  .pins{width:100%;border-collapse:collapse;font-size:.92rem;margin:.4em 0 0}
+  .pins th{
+    text-align:left;font-family:"IBM Plex Mono",monospace;font-size:.68rem;
+    letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+    font-weight:500;padding:0 12px 8px 0;border-bottom:1px solid var(--rule);
+  }
+  .pins td{padding:9px 12px 9px 0;border-bottom:1px solid var(--rule);vertical-align:top;font-variant-numeric:tabular-nums}
+  .pins td:first-child{font-weight:500;white-space:nowrap}
+  .pins code{background:var(--accent-soft);color:var(--ink);padding:1px 5px;border-radius:3px}
+  .state{font-family:"IBM Plex Mono",monospace;font-size:.78rem;white-space:nowrap}
+  .state.bad{color:var(--warn)}
+  .state.good{color:var(--ok)}
+
+  section{margin-top:52px}
+  .rail{display:grid;grid-template-columns:56px 1fr;gap:0 20px;align-items:start}
+  .num{
+    font-size:1.5rem;font-weight:700;color:var(--accent);
+    font-variant-numeric:tabular-nums;line-height:1.1;padding-top:.05em;
+    border-top:2px solid var(--accent);
+  }
+  .step{margin-top:40px}
+  .step:first-of-type{margin-top:26px}
+
+  pre{
+    background:var(--term-bg);color:var(--term-ink);border-radius:5px;
+    margin:.9em 0;padding:14px 16px;overflow-x:auto;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.83rem;line-height:1.65;
+    border:1px solid var(--term-rule);
+  }
+  pre .c{color:var(--term-dim)}
+  pre .k{color:#E2AB45}
+  pre .e{color:#E08050}
+  .filename{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.06em;
+    color:var(--muted);margin:1.4em 0 -.5em;
+  }
+  .copy{
+    font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.08em;
+    text-transform:uppercase;background:none;border:1px solid var(--rule);
+    color:var(--muted);border-radius:3px;padding:3px 8px;cursor:pointer;
+  }
+  .copy:hover{color:var(--ink);border-color:var(--muted)}
+  .copy:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .check{
+    display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:baseline;
+    font-size:.93rem;margin:.5em 0;
+  }
+  .tick{color:var(--ok);font-family:"IBM Plex Mono",monospace}
+  .note{
+    background:var(--surface);border:1px solid var(--rule);border-radius:5px;
+    padding:16px 18px;margin:1.2em 0;font-size:.93rem;
+  }
+  .note.warn{border-left:3px solid var(--warn)}
+  .note.fwd{border-left:3px solid var(--accent)}
+  .note p:last-child{margin-bottom:0}
+  .note .eyebrow{display:block;margin-bottom:.4em;color:var(--muted)}
+  .note.warn .eyebrow{color:var(--warn)}
+
+  ul{margin:.4em 0 1em;padding-left:1.1em;max-width:64ch}
+  li{margin:.3em 0}
+
+  figure{margin:1.6em 0 0}
+  figcaption{font-size:.82rem;color:var(--muted);margin-top:10px;max-width:62ch}
+  svg{width:100%;height:auto;display:block}
+  .sv-surface{fill:var(--surface)}
+  .sv-rule{stroke:var(--rule)}
+  .sv-ink{fill:var(--ink)}
+  .sv-muted{fill:var(--muted)}
+  .sv-accent{fill:var(--accent)}
+  .sv-accent-s{stroke:var(--accent)}
+  .sv-warn{fill:var(--warn)}
+  .sv-warn-s{stroke:var(--warn)}
+  .sv-t{font-family:"IBM Plex Sans",sans-serif;font-size:12px}
+  .sv-m{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.04em}
+
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--rule);color:var(--muted);font-size:.9rem}
+  @media (max-width:640px){
+    .rail{grid-template-columns:1fr;gap:8px}
+    .num{border-top:none;padding-top:0}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  /* os lanes */
+  .osbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:20px}
+  .osbar .lbl{
+    font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--muted);margin-right:4px;
+  }
+  .osbtn{
+    font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.06em;
+    background:none;border:1px solid var(--rule);color:var(--muted);
+    border-radius:3px;padding:4px 10px;cursor:pointer;
+  }
+  .osbtn[aria-pressed="true"]{color:var(--ink);border-color:var(--accent);background:var(--accent-soft)}
+  .osbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  :root[data-os="mac"] .os-win{display:none}
+  :root:not([data-os="mac"]) .os-mac{display:none}
+</style>
+<script>
+  (function () {
+    var os = null;
+    try { os = localStorage.getItem("os"); } catch (e) {}
+    if (os !== "mac" && os !== "win") {
+      os = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "mac" : "win";
+    }
+    document.documentElement.setAttribute("data-os", os);
+  })();
+</script>
+
+
+<div class="page">
+
+<header>
+  <span class="eyebrow">Phase 05 · Kibana, associations, Ingress</span>
+  <h1>Associations and the 502</h1>
+  <p class="lede">Two lines of <code>elasticsearchRef</code> replace a credential-handling
+  project. Then an ingress puts a hostname in front of it, and teaches you the most misleading
+  error in the stack.</p>
+  <div class="goal">
+    <p><strong>Done when:</strong> Kibana loads at <code>kibana.lab.local</code> through Traefik —
+    not a port-forward — you can recite the five things <code>elasticsearchRef</code> caused, and
+    you have seen the 502 and read the log line that explains it.</p>
+  </div>
+  <div class="osbar" role="group" aria-label="Choose the shell the snippets are written for">
+    <span class="lbl">Snippets for</span>
+    <button class="osbtn" type="button" data-os="win" aria-pressed="false">Windows &middot; PowerShell</button>
+    <button class="osbtn" type="button" data-os="mac" aria-pressed="false">macOS &middot; zsh</button>
+  </div>
+</header>
+
+<section>
+  <h2>What this phase needs that you do not have yet</h2>
+  <p>The phase doc says "k3d ships Traefik" and moves on. Traefik is there; a way to reach it is
+  not. <code>phase-1/k3d/cluster.yaml</code> declares no <code>ports:</code>, so the k3d load
+  balancer publishes nothing to the host and an Ingress is unreachable no matter how correct it is.</p>
+  <table class="pins">
+    <thead><tr><th>Fact</th><th>Finding</th><th></th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Traefik</td>
+        <td>Installed by k3s as a HelmChart, <code>ingressClassName: traefik</code></td>
+        <td class="state good">already running</td>
+      </tr>
+      <tr>
+        <td>Host ports</td>
+        <td>None. <code>cluster.yaml</code> has no <code>ports:</code> block</td>
+        <td class="state bad">fix in step 01</td>
+      </tr>
+      <tr>
+        <td>Traefik version</td>
+        <td>k3s 1.28 ships <strong>v2.10</strong> → CRDs under <code>traefik.containo.us</code></td>
+        <td class="state">v3 uses <code>traefik.io</code></td>
+      </tr>
+      <tr>
+        <td>Backend protocol</td>
+        <td>Set on the <strong>Service</strong> via annotations, not on the Ingress</td>
+        <td class="state">the 502</td>
+      </tr>
+      <tr>
+        <td>Memory</td>
+        <td>Kibana adds 1Gi on top of Phase 04's 7Gi</td>
+        <td class="state bad">8Gi is now the floor</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>The two things worth understanding</h2>
+  <figure>
+    <svg viewBox="0 0 820 420" role="img" aria-label="Diagram: top half shows elasticsearchRef causing the operator to create a dedicated user, a credentials secret, a mounted CA and injected settings. Bottom half shows the request path from browser through the k3d load balancer and Traefik over HTTPS to the Kibana pod.">
+      <!-- association -->
+      <text x="8" y="22" class="sv-m sv-accent">1 · ASSOCIATION — WHAT elasticsearchRef DOES</text>
+      <rect x="8" y="34" width="170" height="62" rx="5" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="22" y="56" class="sv-t sv-ink" font-weight="600">Kibana/obs</text>
+      <text x="22" y="74" class="sv-m sv-accent">elasticsearchRef:</text>
+      <text x="22" y="88" class="sv-m sv-accent">  name: obs</text>
+
+      <path d="M178 65 H228" class="sv-accent-s" stroke-width="1.5" fill="none"/>
+      <path d="M228 65 l-8 -4 v8 z" class="sv-accent"/>
+
+      <rect x="234" y="34" width="130" height="62" rx="5" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="248" y="56" class="sv-t sv-ink" font-weight="600">operator</text>
+      <text x="248" y="74" class="sv-m sv-muted">watches the ref,</text>
+      <text x="248" y="88" class="sv-m sv-muted">does five things</text>
+
+      <path d="M364 65 H404" class="sv-accent-s" stroke-width="1.5" fill="none"/>
+      <path d="M404 65 l-8 -4 v8 z" class="sv-accent"/>
+
+      <rect x="410" y="20" width="402" height="104" rx="5" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="424" y="40" class="sv-m sv-muted">1 · a dedicated ES user, least privilege, name generated</text>
+      <text x="424" y="58" class="sv-m sv-muted">2 · a Secret holding its credentials</text>
+      <text x="424" y="76" class="sv-m sv-muted">3 · the Elasticsearch CA mounted into the Kibana pod</text>
+      <text x="424" y="94" class="sv-m sv-muted">4 · connection settings written into kibana.yml</text>
+      <text x="424" y="112" class="sv-m sv-muted">5 · rotation for all of the above</text>
+
+      <text x="8" y="124" class="sv-m sv-muted">you supply no</text>
+      <text x="8" y="138" class="sv-m sv-muted">password, ever</text>
+
+      <!-- request path -->
+      <text x="8" y="186" class="sv-m sv-accent">2 · THE REQUEST PATH — TWO TLS LAYERS, ONE OF THEM YOURS</text>
+
+      <rect x="8" y="202" width="150" height="60" rx="5" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="22" y="224" class="sv-t sv-ink" font-weight="600">browser</text>
+      <text x="22" y="242" class="sv-m sv-muted">kibana.lab.local:8081</text>
+
+      <path d="M158 232 H206" class="sv-accent-s" stroke-width="1.5" fill="none"/>
+      <path d="M206 232 l-8 -4 v8 z" class="sv-accent"/>
+      <text x="160" y="224" class="sv-m sv-muted">http</text>
+
+      <rect x="212" y="202" width="150" height="60" rx="5" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="226" y="224" class="sv-t sv-ink" font-weight="600">k3d-serverlb</text>
+      <text x="226" y="242" class="sv-m sv-muted">8081 → :80</text>
+
+      <path d="M362 232 H410" class="sv-accent-s" stroke-width="1.5" fill="none"/>
+      <path d="M410 232 l-8 -4 v8 z" class="sv-accent"/>
+
+      <rect x="416" y="202" width="166" height="60" rx="5" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="430" y="224" class="sv-t sv-ink" font-weight="600">Traefik · web</text>
+      <text x="430" y="242" class="sv-m sv-muted">Host(kibana.lab.local)</text>
+
+      <path d="M582 232 H640" class="sv-warn-s" stroke-width="1.5" fill="none"/>
+      <path d="M640 232 l-8 -4 v8 z" class="sv-warn"/>
+      <text x="584" y="224" class="sv-m sv-warn">https ← the</text>
+      <text x="584" y="256" class="sv-m sv-warn">bit you set</text>
+
+      <rect x="646" y="202" width="166" height="60" rx="5" class="sv-surface sv-warn-s" stroke-width="1.5"/>
+      <text x="660" y="224" class="sv-t sv-ink" font-weight="600">pod obs-kb · :5601</text>
+      <text x="660" y="242" class="sv-m sv-muted">TLS on by default</text>
+
+      <rect x="8" y="292" width="804" height="112" rx="6" class="sv-surface sv-rule" stroke-width="1" stroke-dasharray="4 4"/>
+      <text x="22" y="314" class="sv-m sv-warn">GET IT WRONG AND THE SYMPTOM POINTS THE WRONG WAY</text>
+      <text x="22" y="336" class="sv-t sv-ink">Traefik speaks plain HTTP to a port expecting TLS. The browser is told 502 Bad Gateway,</text>
+      <text x="22" y="354" class="sv-t sv-ink">which reads like "Kibana is down" — and Kibana is fine. The only honest evidence is one line</text>
+      <text x="22" y="372" class="sv-t sv-ink">in the Kibana container log about a plain HTTP request sent to an HTTPS port.</text>
+      <text x="22" y="394" class="sv-m sv-muted">Five minutes here; two hours the day it happens in production.</text>
+    </svg>
+    <figcaption>The association mechanism is the strongest single argument for the operator over
+    hand-rolled manifests — and it is the first thing to check when two Elastic resources will not
+    talk. <code>associationStatus</code> is the field; it says <code>Established</code> or it tells
+    you why not.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Run it</h2>
+
+  <div class="step rail">
+    <div class="num">01</div>
+    <div>
+      <h3>Publish a host port to the k3d load balancer</h3>
+      <p>An Ingress with nothing listening on the host is a YAML exercise. <code>k3d cluster
+      edit</code> adds the mapping in place — it recreates only the load balancer container, so the
+      five Elasticsearch pods and their PVCs are untouched.</p>
+      <div class="filename"><span>PowerShell or zsh</span><button class="copy" type="button">copy</button></div>
+<pre>k3d cluster edit elastic-lab --port-add "8081:80@loadbalancer"
+
+docker ps --filter name=k3d-elastic-lab-serverlb   <span class="c"># 0.0.0.0:8081-&gt;80/tcp</span>
+kubectl get pods -n eck                            <span class="c"># still Running, unchanged</span></pre>
+      <p>Then fold the same mapping into <code>phase-1/k3d/cluster.yaml</code>, so the next cluster
+      you build from scratch has it:</p>
+      <div class="filename"><span>phase-1/k3d/cluster.yaml · add</span><button class="copy" type="button">copy</button></div>
+<pre><span class="k">ports:</span>
+  - <span class="k">port:</span> <span class="c">"8081:80"</span>
+    <span class="k">nodeFilters:</span> [loadbalancer]</pre>
+      <p>Port 80 on the host is often already taken and needs privileges; 8081 avoids both
+      arguments. Traefik matches <code>Host()</code> without the port, so name-based routing works
+      exactly as it would on 80.</p>
+      <div class="note warn">
+        <span class="eyebrow">Memory, again</span>
+        <p>Kibana's 1Gi lands on top of Phase 04's 7Gi. If Docker Desktop is at 8Gi you are now at
+        the edge — drop the master nodeSet to <code>count: 1</code> for this phase if pods start
+        going <code>Pending</code>, and put it back for Phase 06, which needs the quorum.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">02</div>
+    <div>
+      <h3>Add a hostname your machine can resolve</h3>
+      <div class="os os-win">
+      <div class="filename"><span>PowerShell · as Administrator</span><button class="copy" type="button">copy</button></div>
+<pre>Add-Content -Path $env:SystemRoot\System32\drivers\etc\hosts `
+  -Value "127.0.0.1 kibana.lab.local"
+
+ping kibana.lab.local   <span class="c"># 127.0.0.1</span></pre>
+      </div>
+      <div class="os os-mac">
+      <div class="filename"><span>zsh</span><button class="copy" type="button">copy</button></div>
+<pre>sudo sh -c 'echo "127.0.0.1 kibana.lab.local" &gt;&gt; /etc/hosts'
+
+ping -c1 kibana.lab.local   <span class="c"># 127.0.0.1</span></pre>
+      </div>
+      <p>A hosts entry rather than <code>localhost</code> is the point: you are exercising
+      name-based virtual hosting, which is what production's <code>kibana-ingress</code> and
+      <code>apm-ingress</code> actually do.</p>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">03</div>
+    <div>
+      <h3>Deploy Kibana</h3>
+      <p>Written to <code>phase-5/k8s/kibana.yaml</code>.</p>
+      <div class="filename"><span>phase-5/k8s/kibana.yaml</span><button class="copy" type="button">copy</button></div>
+<pre><span class="k">apiVersion:</span> kibana.k8s.elastic.co/v1
+<span class="k">kind:</span> Kibana
+<span class="k">metadata:</span>
+  <span class="k">name:</span> obs
+  <span class="k">namespace:</span> eck
+<span class="k">spec:</span>
+  <span class="c"># Must match Elasticsearch exactly. Skew is refused, not tolerated.</span>
+  <span class="k">version:</span> 8.19.21
+  <span class="k">count:</span> 1
+
+  <span class="c"># The entire phase is in these two lines.</span>
+  <span class="k">elasticsearchRef:</span>
+    <span class="k">name:</span> obs
+
+  <span class="k">http:</span>
+    <span class="k">service:</span>
+      <span class="k">metadata:</span>
+        <span class="k">annotations:</span>
+          <span class="c"># Traefik reads these off the SERVICE, not the Ingress.</span>
+          <span class="k">traefik.ingress.kubernetes.io/service.serversscheme:</span> https
+          <span class="k">traefik.ingress.kubernetes.io/service.serverstransport:</span> eck-kibana-tls@kubernetescrd
+
+  <span class="k">podTemplate:</span>
+    <span class="k">spec:</span>
+      <span class="k">containers:</span>
+        - <span class="k">name:</span> kibana
+          <span class="k">resources:</span>
+            <span class="k">requests:</span> { <span class="k">memory:</span> 1Gi, <span class="k">cpu:</span> 500m }
+            <span class="k">limits:</span>   { <span class="k">memory:</span> 1Gi }
+          <span class="k">env:</span>
+            <span class="c"># Kibana is Node.js. Without this the heap sizes itself</span>
+            <span class="c"># against the host and gets OOMKilled at a 1Gi limit.</span>
+            - <span class="k">name:</span> NODE_OPTIONS
+              <span class="k">value:</span> <span class="c">"--max-old-space-size=800"</span></pre>
+      <p><strong>Apply it with the service annotations still in place, but before the Ingress
+      exists.</strong> Step 06 is the deliberate exercise and needs them removed — it is cleaner to
+      take a working config apart than to guess at a broken one.</p>
+      <div class="filename"><span>PowerShell or zsh</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl apply -f phase-5/k8s/kibana.yaml
+kubectl get kibana -n eck -w      <span class="c"># HEALTH green, ~90s</span></pre>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">04</div>
+    <div>
+      <h3>Inspect what the association created</h3>
+      <div class="os os-win">
+      <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl get kibana obs -n eck -o jsonpath="{.status.associationStatus}"
+kubectl get secret -n eck | Select-String -Pattern "kibana|kb-"</pre>
+      </div>
+      <div class="os os-mac">
+      <div class="filename"><span>zsh</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl get kibana obs -n eck -o jsonpath='{.status.associationStatus}'
+kubectl get secret -n eck | grep -E "kibana|kb-"</pre>
+      </div>
+      <div class="check"><span class="tick">✓</span><span><code>Established</code> — the one field to check when two Elastic resources will not talk</span></div>
+      <div class="check"><span class="tick">✓</span><span>A user secret, a copy of the Elasticsearch CA, and an association-config secret</span></div>
+      <p>Now ask Elasticsearch who that user is. The username is generated from the namespace and
+      both resource names — it is not <code>elastic</code>, and it is not a name anyone typed:</p>
+      <div class="os os-win">
+      <div class="filename"><span>PowerShell · port-forward 9200 in a second terminal</span><button class="copy" type="button">copy</button></div>
+<pre><span class="c"># --resolve as in Phase 03: the cert has no `localhost` SAN</span>
+$ES = "https://obs-es-http.eck.svc:9200"
+$RESOLVE = "obs-es-http.eck.svc:9200:127.0.0.1"
+
+curl.exe --cacert $env:TEMP\es-ca.crt --resolve $RESOLVE -u "elastic:$PW" `
+  "$ES/_security/user?pretty"</pre>
+      </div>
+      <div class="os os-mac">
+      <div class="filename"><span>zsh · port-forward 9200 in a second terminal</span><button class="copy" type="button">copy</button></div>
+<pre><span class="c"># --resolve as in Phase 03: the cert has no `localhost` SAN</span>
+ES=https://obs-es-http.eck.svc:9200
+RESOLVE=obs-es-http.eck.svc:9200:127.0.0.1
+
+curl --cacert /tmp/es-ca.crt --resolve $RESOLVE -u "elastic:$PW" \
+  "$ES/_security/user?pretty"</pre>
+      </div>
+      <p>Least privilege, applied automatically, with rotation — the thing you would otherwise be
+      writing a runbook for. This is also the mechanism the Collector will lean on in Phase 08.</p>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">05</div>
+    <div>
+      <h3>Reach it the quick way, then the real way</h3>
+      <div class="filename"><span>PowerShell or zsh</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl port-forward -n eck service/obs-kb-http 5601
+<span class="c"># https://localhost:5601 — user elastic, password from Phase 03.</span>
+<span class="c"># Certificate warning expected: this is the ECK self-signed cert.</span></pre>
+      <p>That proves Kibana works. Now stop it and go through the ingress, which is the
+      configuration production actually runs. Check the CRD group first — it differs between
+      Traefik v2 and v3, and applying the wrong one fails with <code>no matches for kind</code>:</p>
+      <div class="os os-win">
+      <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl get crd | Select-String serverstransport
+<span class="c"># traefik.containo.us -> v2.x, matches the file as written</span>
+<span class="c"># traefik.io          -> v3.x, edit apiVersion first</span>
+
+kubectl apply -f phase-5\k8s\ingress.yaml
+kubectl get ingress,serverstransport -n eck</pre>
+      </div>
+      <div class="os os-mac">
+      <div class="filename"><span>zsh</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl get crd | grep serverstransport
+<span class="c"># traefik.containo.us -> v2.x, matches the file as written</span>
+<span class="c"># traefik.io          -> v3.x, edit apiVersion first</span>
+
+kubectl apply -f phase-5/k8s/ingress.yaml
+kubectl get ingress,serverstransport -n eck</pre>
+      </div>
+      <div class="filename"><span>phase-5/k8s/ingress.yaml</span><button class="copy" type="button">copy</button></div>
+<pre><span class="k">apiVersion:</span> traefik.containo.us/v1alpha1
+<span class="k">kind:</span> ServersTransport
+<span class="k">metadata:</span>
+  <span class="k">name:</span> kibana-tls
+  <span class="k">namespace:</span> eck
+<span class="k">spec:</span>
+  <span class="c"># A SAN on the ECK certificate. Traefik dials the pod IP, so without</span>
+  <span class="c"># this the hostname check fails even though the CA is trusted.</span>
+  <span class="k">serverName:</span> obs-kb-http.eck.svc
+  <span class="k">rootCAsSecrets:</span>
+    - obs-kb-http-certs-public
+<span class="k">---</span>
+<span class="k">apiVersion:</span> networking.k8s.io/v1
+<span class="k">kind:</span> Ingress
+<span class="k">metadata:</span>
+  <span class="k">name:</span> kibana
+  <span class="k">namespace:</span> eck
+  <span class="k">annotations:</span>
+    <span class="k">traefik.ingress.kubernetes.io/router.entrypoints:</span> web
+<span class="k">spec:</span>
+  <span class="k">ingressClassName:</span> traefik
+  <span class="k">rules:</span>
+    - <span class="k">host:</span> kibana.lab.local
+      <span class="k">http:</span>
+        <span class="k">paths:</span>
+          - <span class="k">path:</span> /
+            <span class="k">pathType:</span> Prefix
+            <span class="k">backend:</span>
+              <span class="k">service:</span>
+                <span class="k">name:</span> obs-kb-http
+                <span class="k">port:</span> { <span class="k">number:</span> 5601 }</pre>
+      <div class="check"><span class="tick">✓</span><span><code>http://kibana.lab.local:8081</code> loads the login page with no port-forward running</span></div>
+      <p>Note what the ingress is <em>not</em> doing: no credentials, no CA, no mention of
+      Elasticsearch. It routes a hostname to a Service, and everything behind that was arranged by
+      the association.</p>
+      <div class="note fwd">
+        <span class="eyebrow">Why the browser hop is plain HTTP here</span>
+        <p>Deliberate scope control. A trusted browser certificate means a local CA and an
+        OS trust store — a real task, but a different one, and it would bury the lesson this phase
+        is actually about. Production terminates a proper certificate at the ingress; that belongs
+        in Phase 18, alongside the decision about which CA issues it in an air-gapped environment.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">06</div>
+    <div>
+      <h3>The deliberate exercise: break the backend protocol</h3>
+      <p>You have a working path. Take out the one annotation that makes it work and watch how
+      badly the symptom describes the cause.</p>
+      <div class="filename"><span>PowerShell or zsh</span><button class="copy" type="button">copy</button></div>
+<pre><span class="c"># delete the two annotations under spec.http.service.metadata, then:</span>
+kubectl apply -f phase-5/k8s/kibana.yaml
+
+<span class="c"># reload http://kibana.lab.local:8081 → 502 Bad Gateway</span>
+kubectl logs -n eck -l kibana.k8s.elastic.co/name=obs --tail=30</pre>
+<pre><span class="e">{"log.level":"error","message":"{ code: 'ERR_SSL_HTTP_REQUEST',
+  reason: 'http request', ... }"}</span>
+<span class="c"># or, depending on build:</span>
+<span class="e">4A7C0000:error:0A00010B:SSL routines:ssl3_get_record:wrong version number</span></pre>
+      <p>Kibana is healthy. Elasticsearch is healthy. The association is <code>Established</code>.
+      The browser says 502, which reads as "the backend is down", and the pod list agrees that
+      nothing is down. The only honest evidence is that log line — and you only think to look at it
+      if you have seen this once before. That is the entire value of doing it on purpose now. Put
+      the annotations back and confirm it recovers.</p>
+      <div class="note warn">
+        <span class="eyebrow">The shortcut, and its price</span>
+        <p>You can instead set <code>spec.http.tls.selfSignedCertificate.disabled: true</code> on
+        the Kibana resource and let the ingress talk plain HTTP to the pod. It is one line and it
+        works. It also means Kibana traffic crosses the cluster network unencrypted — including the
+        session cookie of every admin who logs in. A defensible choice only where pod-to-pod
+        traffic is already covered by something else; write down which it is before choosing it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Three sharp edges</h2>
+  <div class="note warn">
+    <span class="eyebrow">The saved-objects encryption key lives in a Secret you can delete</span>
+    <p>ECK generates the key that encrypts alerting rules, connectors and other saved objects, and
+    keeps it in the Kibana config Secret. Delete the <code>Kibana</code> resource and that Secret
+    goes with it; recreate Kibana and a <em>new</em> key is generated, at which point every
+    encrypted saved object created before is unreadable — Kibana reports decryption errors, not a
+    missing key. Nothing is lost today because Phase 13 has not created anything yet. Before it
+    does, decide where that key is backed up, and note it as a Phase 19 cutover input.</p>
+  </div>
+  <div class="note warn">
+    <span class="eyebrow">Annotate the Service through the CR, never with kubectl</span>
+    <p><code>obs-kb-http</code> is operator-managed. <code>kubectl annotate</code> on it survives
+    until the next reconcile and then quietly disappears, which produces a 502 that reappears hours
+    after someone "fixed" it. <code>spec.http.service.metadata.annotations</code> is the supported
+    way in, and it is declarative, which is the point of this whole repo.</p>
+  </div>
+  <div class="note warn">
+    <span class="eyebrow">Cross-namespace associations do not work by default</span>
+    <p><code>elasticsearchRef</code> takes an optional <code>namespace</code>, but the operator
+    refuses cross-namespace references unless it was installed with them enabled. Everything here
+    is in <code>eck</code>, so it does not bite — it bites in Phase 18 if production splits Kibana
+    and Elasticsearch across namespaces. The symptom is an <code>associationStatus</code> that
+    never leaves <code>Pending</code>.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Done when</h2>
+  <div class="check"><span class="tick">✓</span><span>Kibana loads at <code>http://kibana.lab.local:8081</code> with no port-forward running</span></div>
+  <div class="check"><span class="tick">✓</span><span>You can list the five things <code>elasticsearchRef</code> caused, without looking</span></div>
+  <div class="check"><span class="tick">✓</span><span>You have read <code>.status.associationStatus</code> and know it is the first thing to check</span></div>
+  <div class="check"><span class="tick">✓</span><span>You have produced the 502 on purpose and found the cause in the Kibana log</span></div>
+  <div class="check"><span class="tick">✓</span><span><code>phase-5/k8s/kibana.yaml</code>, <code>phase-5/k8s/ingress.yaml</code> and the <code>cluster.yaml</code> port block are committed</span></div>
+</section>
+
+<footer>
+  <p>Next: <strong>Phase 06 — Operations</strong>, the payoff phase: a rolling version upgrade, a
+  deliberately killed node, and a scale-up — watched through the operator log and this Kibana.
+  Restore the master nodeSet to <code>count: 3</code> first if you dropped it. Log what broke here,
+  with exact error text, in <code>learning-phases/05-kibana-and-ingress.md</code> under Notes.</p>
+</footer>
+
+</div>
+
+<script>
+  function syncOs() {
+    var cur = document.documentElement.getAttribute("data-os");
+    document.querySelectorAll(".osbtn").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.os === cur));
+    });
+  }
+  document.querySelectorAll(".osbtn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.documentElement.setAttribute("data-os", btn.dataset.os);
+      try { localStorage.setItem("os", btn.dataset.os); } catch (e) {}
+      syncOs();
+    });
+  });
+  syncOs();
+
+  document.querySelectorAll(".copy").forEach(function (btn) {
+    btn.addEventListener("click", async function () {
+      var pre = btn.closest(".filename") && btn.closest(".filename").nextElementSibling;
+      if (!pre || pre.tagName !== "PRE") return;
+      var text = pre.innerText;
+      var done = false;
+      try {
+        await navigator.clipboard.writeText(text);
+        done = true;
+      } catch (e) {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          done = document.execCommand("copy");
+          document.body.removeChild(ta);
+        } catch (e2) { done = false; }
+      }
+      var was = btn.textContent;
+      btn.textContent = done ? "copied" : "select it";
+      setTimeout(function () { btn.textContent = was; }, 1600);
+    });
+  });
+</script>

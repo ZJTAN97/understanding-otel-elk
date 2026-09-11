@@ -1,7 +1,14 @@
 # Elasticsearch 8.19.21 — Phase 04 topology. Supersedes phase-3/k8s/elasticsearch.yaml.
 #
 # Three dedicated masters, two data+ingest nodes. Five JVMs on one laptop:
-# 3 x 1Gi + 2 x 2Gi = 7Gi of limits, so Docker Desktop needs >= 8Gi allocated.
+# 3 x 768Mi + 2 x 1280Mi = 4.75Gi of limits. Sized down from 7Gi: k3d runs every
+# "node" inside one Docker VM but each reports the whole VM as allocatable, so
+# the scheduler happily overcommits until CoreDNS starves and pods die with
+# "Temporary failure in name resolution". Heaps are small because this cluster
+# holds lab-sized data; the topology is the lesson, not the capacity.
+#
+# Limits are ~3x heap, not 1x. The JVM needs metaspace, direct buffers, thread
+# stacks and code cache outside -Xmx; 512Mi around a 256m heap gets OOMKilled.
 #
 # There is NO dedicated ingest nodeSet. With the OTel Collector doing enrichment
 # upstream (00-decisions.md D4), a third tier solves a problem this cluster does
@@ -41,13 +48,13 @@ spec:
             - name: elasticsearch
               resources:
                 requests:
-                  memory: 1Gi
+                  memory: 768Mi
                   cpu: 500m
                 limits:
-                  memory: 1Gi
+                  memory: 768Mi
               env:
                 - name: ES_JAVA_OPTS
-                  value: "-Xms512m -Xmx512m"
+                  value: "-Xms256m -Xmx256m"
 
     - name: data
       count: 2
@@ -69,10 +76,10 @@ spec:
             - name: elasticsearch
               resources:
                 requests:
-                  memory: 2Gi
+                  memory: 1280Mi
                   cpu: 1
                 limits:
-                  memory: 2Gi
+                  memory: 1280Mi
               env:
                 - name: ES_JAVA_OPTS
-                  value: "-Xms1g -Xmx1g"
+                  value: "-Xms512m -Xmx512m"

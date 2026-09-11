@@ -432,8 +432,10 @@ kubectl get sts,pvc -n eck</pre>
   -o go-template='{{.data.elastic | base64decode}}'
 <span class="c"># second terminal: kubectl port-forward -n eck service/obs-es-http 9200</span>
 
-curl.exe --cacert $env:TEMP\es-ca.crt -u "elastic:$PW" `
-  "https://localhost:9200/_cat/nodes?v&amp;h=name,node.role,master,heap.percent"</pre>
+<span class="c"># --resolve as in Phase 03: the cert has no `localhost` SAN</span>
+curl.exe --cacert $env:TEMP\es-ca.crt `
+  --resolve obs-es-http.eck.svc:9200:127.0.0.1 -u "elastic:$PW" `
+  "https://obs-es-http.eck.svc:9200/_cat/nodes?v&amp;h=name,node.role,master,heap.percent"</pre>
       </div>
       <div class="os os-mac">
       <div class="filename"><span>zsh</span><button class="copy" type="button">copy</button></div>
@@ -441,8 +443,10 @@ curl.exe --cacert $env:TEMP\es-ca.crt -u "elastic:$PW" `
   -o go-template='{{.data.elastic | base64decode}}')
 <span class="c"># second terminal: kubectl port-forward -n eck service/obs-es-http 9200</span>
 
-curl --cacert /tmp/es-ca.crt -u "elastic:$PW" \
-  "https://localhost:9200/_cat/nodes?v&amp;h=name,node.role,master,heap.percent"</pre>
+<span class="c"># --resolve as in Phase 03: the cert has no `localhost` SAN</span>
+curl --cacert /tmp/es-ca.crt \
+  --resolve obs-es-http.eck.svc:9200:127.0.0.1 -u "elastic:$PW" \
+  "https://obs-es-http.eck.svc:9200/_cat/nodes?v&amp;h=name,node.role,master,heap.percent"</pre>
       </div>
 <pre><span class="c">name             node.role master heap.percent</span>
 obs-es-master-0  m         <span class="k">*</span>      31
@@ -464,37 +468,39 @@ obs-es-data-1    di        -      24</pre>
       instantly and teaches you nothing; step 06 depends on there being something to move.</p>
       <div class="os os-win">
       <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
-<pre>$ES = "https://localhost:9200"
+<pre>$ES = "https://obs-es-http.eck.svc:9200"
 $CA = "$env:TEMP\es-ca.crt"
+$RESOLVE = "obs-es-http.eck.svc:9200:127.0.0.1"
 
-curl.exe --cacert $CA -u "elastic:$PW" -X PUT "$ES/test-index" `
+curl.exe --cacert $CA --resolve $RESOLVE -u "elastic:$PW" -X PUT "$ES/test-index" `
   -H "Content-Type: application/json" `
   -d '{\"settings\":{\"number_of_shards\":2,\"number_of_replicas\":1}}'
 
 <span class="c"># a few thousand docs so relocation takes measurable time</span>
 1..2000 | ForEach-Object {
-  curl.exe -s --cacert $CA -u "elastic:$PW" -X POST "$ES/test-index/_doc" `
+  curl.exe -s --cacert $CA --resolve $RESOLVE -u "elastic:$PW" -X POST "$ES/test-index/_doc" `
     -H "Content-Type: application/json" -d "{\"n\":$_}" | Out-Null
 }
 
-curl.exe --cacert $CA -u "elastic:$PW" "$ES/_cat/shards/test-index?v"</pre>
+curl.exe --cacert $CA --resolve $RESOLVE -u "elastic:$PW" "$ES/_cat/shards/test-index?v"</pre>
       </div>
       <div class="os os-mac">
       <div class="filename"><span>zsh</span><button class="copy" type="button">copy</button></div>
-<pre>ES=https://localhost:9200
+<pre>ES=https://obs-es-http.eck.svc:9200
 CA=/tmp/es-ca.crt
+RESOLVE=obs-es-http.eck.svc:9200:127.0.0.1
 
-curl --cacert $CA -u "elastic:$PW" -X PUT "$ES/test-index" \
+curl --cacert $CA --resolve $RESOLVE -u "elastic:$PW" -X PUT "$ES/test-index" \
   -H 'Content-Type: application/json' \
   -d '{"settings":{"number_of_shards":2,"number_of_replicas":1}}'
 
 <span class="c"># a few thousand docs so relocation takes measurable time</span>
 for i in $(seq 1 2000); do
-  curl -s --cacert $CA -u "elastic:$PW" -X POST "$ES/test-index/_doc" \
+  curl -s --cacert $CA --resolve $RESOLVE -u "elastic:$PW" -X POST "$ES/test-index/_doc" \
     -H 'Content-Type: application/json' -d "{\"n\":$i}" &gt; /dev/null
 done
 
-curl --cacert $CA -u "elastic:$PW" "$ES/_cat/shards/test-index?v"</pre>
+curl --cacert $CA --resolve $RESOLVE -u "elastic:$PW" "$ES/_cat/shards/test-index?v"</pre>
       </div>
       <p>Four shards: two <code>p</code>, two <code>r</code>, and no primary sharing a node with its
       own replica. Now take a data node away and watch the consequence:</p>

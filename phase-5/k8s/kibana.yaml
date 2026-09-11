@@ -1,0 +1,42 @@
+# Kibana 8.19.21 — version must match Elasticsearch exactly (00-decisions.md D3).
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: obs
+  namespace: eck
+spec:
+  version: 8.19.21
+  count: 1
+
+  # The whole phase is in these two lines. No username, no password, no CA path:
+  # the operator creates a dedicated least-privilege user in Elasticsearch,
+  # mounts the ES CA, writes kibana.yml, and rotates all of it.
+  elasticsearchRef:
+    name: obs
+
+  http:
+    service:
+      metadata:
+        annotations:
+          # Traefik reads these off the SERVICE, not off the Ingress.
+          # Without them Traefik speaks plain HTTP to a TLS port and you get a
+          # 502 that points nowhere near the real cause.
+          traefik.ingress.kubernetes.io/service.serversscheme: https
+          # <namespace>-<ServersTransport name>@kubernetescrd
+          traefik.ingress.kubernetes.io/service.serverstransport: eck-kibana-tls@kubernetescrd
+
+  podTemplate:
+    spec:
+      containers:
+        - name: kibana
+          resources:
+            requests:
+              memory: 1Gi
+              cpu: 500m
+            limits:
+              memory: 1Gi
+          env:
+            # Kibana is Node.js: without this the heap sizes itself against the
+            # host's memory, ignores the cgroup limit, and gets OOMKilled at 1Gi.
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=800"
