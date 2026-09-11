@@ -1,0 +1,660 @@
+<title>One Node, Forty Objects</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#EDF0F3;
+    --surface:#FFFFFF;
+    --ink:#12161C;
+    --muted:#58626F;
+    --rule:#D3D9E0;
+    --accent:#8A5D00;
+    --accent-soft:rgba(138,93,0,.10);
+    --ok:#0F6B54;
+    --warn:#9C3B12;
+    --term-bg:#151A21;
+    --term-ink:#DCE2EA;
+    --term-dim:#7C8794;
+    --term-rule:#2A323C;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0E1218;
+      --surface:#151A21;
+      --ink:#E3E8EE;
+      --muted:#98A2AF;
+      --rule:#252C36;
+      --accent:#E2AB45;
+      --accent-soft:rgba(226,171,69,.12);
+      --ok:#4FBFA0;
+      --warn:#E08050;
+      --term-bg:#0A0D12;
+      --term-ink:#DCE2EA;
+      --term-dim:#78838F;
+      --term-rule:#222A33;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0E1218;
+    --surface:#151A21;
+    --ink:#E3E8EE;
+    --muted:#98A2AF;
+    --rule:#252C36;
+    --accent:#E2AB45;
+    --accent-soft:rgba(226,171,69,.12);
+    --ok:#4FBFA0;
+    --warn:#E08050;
+    --term-bg:#0A0D12;
+    --term-ink:#DCE2EA;
+    --term-dim:#78838F;
+    --term-rule:#222A33;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+    font-size:15.5px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:900px;margin:0 auto;padding:40px 24px 96px}
+  h1,h2,h3,.eyebrow,.num{font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif}
+  h1{font-size:clamp(2.1rem,5vw,3.1rem);font-weight:700;line-height:1.03;letter-spacing:-.015em;margin:.15em 0 .3em;text-wrap:balance}
+  h2{font-size:1.45rem;font-weight:700;letter-spacing:-.01em;margin:0 0 .2em;text-wrap:balance}
+  h3{font-size:1.02rem;font-weight:600;margin:0 0 .35em}
+  p{margin:0 0 .85em;max-width:66ch}
+  a{color:var(--accent)}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.88em}
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:500;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--accent);
+  }
+  .lede{font-size:1.12rem;color:var(--muted);max-width:60ch}
+
+  header{border-bottom:1px solid var(--rule);padding-bottom:28px;margin-bottom:36px}
+  .goal{
+    display:flex;gap:14px;align-items:flex-start;margin-top:22px;
+    border-left:3px solid var(--accent);padding:2px 0 2px 14px;
+  }
+  .goal p{margin:0;font-size:.95rem}
+
+  .pins{width:100%;border-collapse:collapse;font-size:.92rem;margin:.4em 0 0}
+  .pins th{
+    text-align:left;font-family:"IBM Plex Mono",monospace;font-size:.68rem;
+    letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+    font-weight:500;padding:0 12px 8px 0;border-bottom:1px solid var(--rule);
+  }
+  .pins td{padding:9px 12px 9px 0;border-bottom:1px solid var(--rule);vertical-align:top;font-variant-numeric:tabular-nums}
+  .pins td:first-child{font-weight:500;white-space:nowrap}
+  .pins code{background:var(--accent-soft);color:var(--ink);padding:1px 5px;border-radius:3px}
+  .state{font-family:"IBM Plex Mono",monospace;font-size:.78rem;white-space:nowrap}
+  .state.bad{color:var(--warn)}
+  .state.good{color:var(--ok)}
+
+  section{margin-top:52px}
+  .rail{display:grid;grid-template-columns:56px 1fr;gap:0 20px;align-items:start}
+  .num{
+    font-size:1.5rem;font-weight:700;color:var(--accent);
+    font-variant-numeric:tabular-nums;line-height:1.1;padding-top:.05em;
+    border-top:2px solid var(--accent);
+  }
+  .step{margin-top:40px}
+  .step:first-of-type{margin-top:26px}
+
+  pre{
+    background:var(--term-bg);color:var(--term-ink);border-radius:5px;
+    margin:.9em 0;padding:14px 16px;overflow-x:auto;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.83rem;line-height:1.65;
+    border:1px solid var(--term-rule);
+  }
+  pre .c{color:var(--term-dim)}
+  pre .k{color:#E2AB45}
+  pre .e{color:#E08050}
+  .filename{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.06em;
+    color:var(--muted);margin:1.4em 0 -.5em;
+  }
+  .copy{
+    font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.08em;
+    text-transform:uppercase;background:none;border:1px solid var(--rule);
+    color:var(--muted);border-radius:3px;padding:3px 8px;cursor:pointer;
+  }
+  .copy:hover{color:var(--ink);border-color:var(--muted)}
+  .copy:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .check{
+    display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:baseline;
+    font-size:.93rem;margin:.5em 0;
+  }
+  .tick{color:var(--ok);font-family:"IBM Plex Mono",monospace}
+  .note{
+    background:var(--surface);border:1px solid var(--rule);border-radius:5px;
+    padding:16px 18px;margin:1.2em 0;font-size:.93rem;
+  }
+  .note.warn{border-left:3px solid var(--warn)}
+  .note.fwd{border-left:3px solid var(--accent)}
+  .note p:last-child{margin-bottom:0}
+  .note .eyebrow{display:block;margin-bottom:.4em;color:var(--muted)}
+  .note.warn .eyebrow{color:var(--warn)}
+
+  ul{margin:.4em 0 1em;padding-left:1.1em;max-width:64ch}
+  li{margin:.3em 0}
+
+  figure{margin:1.6em 0 0}
+  figcaption{font-size:.82rem;color:var(--muted);margin-top:10px;max-width:62ch}
+  svg{width:100%;height:auto;display:block}
+  .sv-surface{fill:var(--surface)}
+  .sv-rule{stroke:var(--rule)}
+  .sv-ink{fill:var(--ink)}
+  .sv-muted{fill:var(--muted)}
+  .sv-accent{fill:var(--accent)}
+  .sv-accent-s{stroke:var(--accent)}
+  .sv-warn{fill:var(--warn)}
+  .sv-warn-s{stroke:var(--warn)}
+  .sv-t{font-family:"IBM Plex Sans",sans-serif;font-size:12px}
+  .sv-m{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.04em}
+
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--rule);color:var(--muted);font-size:.9rem}
+  @media (max-width:640px){
+    .rail{grid-template-columns:1fr;gap:8px}
+    .num{border-top:none;padding-top:0}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  /* os lanes */
+  .osbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:20px}
+  .osbar .lbl{
+    font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--muted);margin-right:4px;
+  }
+  .osbtn{
+    font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.06em;
+    background:none;border:1px solid var(--rule);color:var(--muted);
+    border-radius:3px;padding:4px 10px;cursor:pointer;
+  }
+  .osbtn[aria-pressed="true"]{color:var(--ink);border-color:var(--accent);background:var(--accent-soft)}
+  .osbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  :root[data-os="mac"] .os-win{display:none}
+  :root:not([data-os="mac"]) .os-mac{display:none}
+</style>
+<script>
+  (function () {
+    var os = null;
+    try { os = localStorage.getItem("os"); } catch (e) {}
+    if (os !== "mac" && os !== "win") {
+      os = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "mac" : "win";
+    }
+    document.documentElement.setAttribute("data-os", os);
+  })();
+</script>
+
+
+<div class="page">
+
+<header>
+  <span class="eyebrow">Phase 03 · First Elasticsearch</span>
+  <h1>One node, forty objects</h1>
+  <p class="lede">Twenty lines of YAML. The work of this phase is enumerating everything those
+  twenty lines generate — once, deliberately — so that nothing in production is a mystery.</p>
+  <div class="goal">
+    <p><strong>Done when:</strong> <code>kubectl get es -n eck</code> reports <code>green</code>
+    and <code>Ready</code>, you can name every Secret, Service and workload the operator created
+    and say what it is for, and you have queried the cluster with full certificate validation —
+    no <code>-k</code>.</p>
+  </div>
+  <div class="osbar" role="group" aria-label="Choose the shell the snippets are written for">
+    <span class="lbl">Snippets for</span>
+    <button class="osbtn" type="button" data-os="win" aria-pressed="false">Windows &middot; PowerShell</button>
+    <button class="osbtn" type="button" data-os="mac" aria-pressed="false">macOS &middot; zsh</button>
+  </div>
+</header>
+
+<section>
+  <h2>The namespace question, answered</h2>
+  <p>The phase doc puts this cluster in <code>elastic-stack</code>. Phase 02 installed an operator
+  whose <code>managedNamespaces</code> is <code>[eck]</code>. Those two facts do not fit together,
+  and the failure they produce is silent.</p>
+  <table class="pins">
+    <thead>
+      <tr><th>Fact</th><th>Finding</th><th></th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Phase doc says</td>
+        <td><code>namespace: elastic-stack</code></td>
+        <td class="state bad">stale — predates Phase 02</td>
+      </tr>
+      <tr>
+        <td>Operator watches</td>
+        <td><code>managedNamespaces: [eck]</code>, from <code>phase-2/helm/eck-operator/values.yaml</code></td>
+        <td class="state good">this is the one that binds</td>
+      </tr>
+      <tr>
+        <td>Webhook checks</td>
+        <td>the <em>spec</em> — version, nodeSets, names. Not <em>where</em> you put it</td>
+        <td class="state">accepts both</td>
+      </tr>
+      <tr>
+        <td>Elasticsearch version</td>
+        <td><code>8.19.21</code> — 00-decisions.md <strong>D3</strong></td>
+        <td class="state">Kibana must match exactly</td>
+      </tr>
+      <tr>
+        <td>Storage class</td>
+        <td><code>local-path</code> — k3d ships the Rancher provisioner</td>
+        <td class="state">node-local, see below</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="note warn">
+    <span class="eyebrow">Reconciled by nobody</span>
+    <p>Apply into an unwatched namespace and everything <em>looks</em> fine: the webhook is
+    cluster-scoped, so it validates the spec and admits the object. Then nothing happens. No
+    StatefulSet, no pod, no events, and <code>kubectl get es</code> shows a row whose
+    <code>HEALTH</code> and <code>PHASE</code> columns stay empty forever. That blank-columns-plus-
+    no-events fingerprint means <strong>no operator is watching</strong> — it is not a slow start.
+    Use <code>eck</code>, or add the namespace to <code>managedNamespaces</code> and
+    <code>helm upgrade</code>. Do not do both halves of the decision by accident.</p>
+  </div>
+</section>
+
+<section>
+  <h2>What twenty lines generate</h2>
+  <figure>
+    <svg viewBox="0 0 820 400" role="img" aria-label="Diagram: one Elasticsearch custom resource is reconciled by the operator into a StatefulSet with one pod and one PVC, three Services, five Secrets forming an internal PKI, and a PodDisruptionBudget.">
+      <rect x="8" y="86" width="188" height="74" rx="5" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="22" y="110" class="sv-t sv-ink" font-weight="600">Elasticsearch/obs</text>
+      <text x="22" y="127" class="sv-m sv-muted">20 lines · 1 nodeSet</text>
+      <text x="22" y="143" class="sv-m sv-muted">version 8.19.21</text>
+
+      <path d="M196 123 H256" class="sv-accent-s" stroke-width="1.5" fill="none"/>
+      <path d="M256 123 l-8 -4 v8 z" class="sv-accent"/>
+      <text x="200" y="115" class="sv-m sv-accent">reconcile</text>
+
+      <rect x="262" y="86" width="132" height="74" rx="5" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="276" y="110" class="sv-t sv-ink" font-weight="600">operator</text>
+      <text x="276" y="127" class="sv-m sv-muted">elastic-system</text>
+      <text x="276" y="143" class="sv-m sv-muted">watches ns/eck</text>
+
+      <!-- fan out -->
+      <path d="M394 123 H436" class="sv-accent-s" stroke-width="1.5" fill="none"/>
+      <path d="M436 42 V300" class="sv-accent-s" stroke-width="1.5" fill="none"/>
+      <path d="M436 42 H470" class="sv-accent-s" stroke-width="1.5" fill="none"/>
+      <path d="M470 42 l-8 -4 v8 z" class="sv-accent"/>
+      <path d="M436 123 H470" class="sv-accent-s" stroke-width="1.5" fill="none"/>
+      <path d="M470 123 l-8 -4 v8 z" class="sv-accent"/>
+      <path d="M436 214 H470" class="sv-accent-s" stroke-width="1.5" fill="none"/>
+      <path d="M470 214 l-8 -4 v8 z" class="sv-accent"/>
+      <path d="M436 300 H470" class="sv-accent-s" stroke-width="1.5" fill="none"/>
+      <path d="M470 300 l-8 -4 v8 z" class="sv-accent"/>
+
+      <!-- workload -->
+      <rect x="476" y="16" width="336" height="52" rx="5" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="490" y="36" class="sv-t sv-ink" font-weight="600">sts/obs-es-default → pod obs-es-default-0</text>
+      <text x="490" y="54" class="sv-m sv-muted">pvc elasticsearch-data-obs-es-default-0 · 10Gi · local-path</text>
+
+      <!-- services -->
+      <rect x="476" y="80" width="336" height="86" rx="5" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="490" y="100" class="sv-t sv-ink" font-weight="600">3 Services</text>
+      <text x="490" y="118" class="sv-m sv-muted">obs-es-http · clients, :9200</text>
+      <text x="490" y="134" class="sv-m sv-muted">obs-es-transport · headless, discovery</text>
+      <text x="490" y="150" class="sv-m sv-muted">obs-es-internal-http · operator only</text>
+
+      <!-- secrets / PKI -->
+      <rect x="476" y="178" width="336" height="104" rx="5" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="490" y="198" class="sv-t sv-ink" font-weight="600">Secrets · a complete internal PKI</text>
+      <text x="490" y="216" class="sv-m sv-muted">obs-es-elastic-user · superuser password</text>
+      <text x="490" y="232" class="sv-m sv-muted">obs-es-http-certs-public · the CA you trust</text>
+      <text x="490" y="248" class="sv-m sv-muted">obs-es-http-certs-internal · server cert + key</text>
+      <text x="490" y="264" class="sv-m sv-muted">obs-es-transport-certs-* · node-to-node mTLS</text>
+
+      <rect x="476" y="294" width="336" height="52" rx="5" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="490" y="314" class="sv-t sv-ink" font-weight="600">pdb/obs-es-default · plus ConfigMaps</text>
+      <text x="490" y="332" class="sv-m sv-muted">maxUnavailable: 1 — Phase 06 makes this matter</text>
+
+      <text x="8" y="196" class="sv-m sv-muted">you write this</text>
+      <text x="8" y="212" class="sv-m sv-muted">and nothing else</text>
+
+      <text x="8" y="252" class="sv-m sv-warn">TLS is on from</text>
+      <text x="8" y="268" class="sv-m sv-warn">minute one and</text>
+      <text x="8" y="284" class="sv-m sv-warn">cannot be casually</text>
+      <text x="8" y="300" class="sv-m sv-warn">turned off</text>
+    </svg>
+    <figcaption>Two certificate concerns, not one. <strong>Transport</strong> is node-to-node mTLS,
+    fully operator-managed and rotated — you never touch it. <strong>HTTP</strong> is client-facing
+    and self-signed; Phase 05 replaces it for external access. The Collector in Phase 08 will need
+    the <code>ca.crt</code> out of <code>obs-es-http-certs-public</code>, which is why step 05 below
+    is not optional.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Run it</h2>
+
+  <div class="step rail">
+    <div class="num">01</div>
+    <div>
+      <h3>Decide the mmap question before you apply</h3>
+      <p>Elasticsearch memory-maps index files and wants <code>vm.max_map_count=262144</code>. That
+      sysctl belongs to the kernel your Docker Desktop VM is running — not to the k3d containers,
+      and not to macOS or Windows. You have two ways out, and they are not equal.</p>
+      <div class="os os-win">
+      <div class="filename"><span>PowerShell · the docker-desktop WSL distro</span><button class="copy" type="button">copy</button></div>
+<pre>wsl -d docker-desktop sysctl vm.max_map_count           <span class="c"># check first</span>
+wsl -d docker-desktop sysctl -w vm.max_map_count=262144</pre>
+      </div>
+      <div class="os os-mac">
+      <div class="filename"><span>zsh · the LinuxKit VM, entered via a privileged container</span><button class="copy" type="button">copy</button></div>
+<pre>docker run --rm --privileged --pid=host alpine \
+  nsenter -t 1 -m -u -n -i sysctl vm.max_map_count          <span class="c"># check first</span>
+docker run --rm --privileged --pid=host alpine \
+  nsenter -t 1 -m -u -n -i sysctl -w vm.max_map_count=262144</pre>
+      </div>
+      <p>Neither survives a Docker Desktop restart, so you would be re-running it for the next
+      seventeen phases. The manifest below instead sets <code>node.store.allow_mmap: false</code>,
+      which makes the requirement go away at a search-performance cost — right for a laptop,
+      <strong>wrong for production</strong>, where you set the sysctl on the nodes and delete the
+      line. Pick one. The old <code>k3d-plan.md</code> did both, which is belt and braces on a
+      cluster with no trousers.</p>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">02</div>
+    <div>
+      <h3>The manifest</h3>
+      <p>Already written to <code>phase-3/k8s/elasticsearch.yaml</code>. Three of these lines are
+      worth understanding rather than copying; they are the commented ones.</p>
+      <div class="filename"><span>phase-3/k8s/elasticsearch.yaml</span><button class="copy" type="button">copy</button></div>
+<pre><span class="k">apiVersion:</span> elasticsearch.k8s.elastic.co/v1
+<span class="k">kind:</span> Elasticsearch
+<span class="k">metadata:</span>
+  <span class="k">name:</span> obs
+  <span class="c"># The namespace the Phase 02 operator actually watches.</span>
+  <span class="k">namespace:</span> eck
+<span class="k">spec:</span>
+  <span class="k">version:</span> 8.19.21
+  <span class="k">nodeSets:</span>
+    - <span class="k">name:</span> default
+      <span class="k">count:</span> 1
+      <span class="k">config:</span>
+        <span class="c"># Lab only. In production set the sysctl and delete this.</span>
+        <span class="k">node.store.allow_mmap:</span> false
+      <span class="k">volumeClaimTemplates:</span>
+        - <span class="k">metadata:</span>
+            <span class="c"># This name is required. Anything else is mounted as an extra</span>
+            <span class="c"># volume and the data path silently stays on the 1Gi default.</span>
+            <span class="k">name:</span> elasticsearch-data
+          <span class="k">spec:</span>
+            <span class="k">accessModes:</span> [ReadWriteOnce]
+            <span class="k">resources:</span>
+              <span class="k">requests:</span>
+                <span class="k">storage:</span> 10Gi
+            <span class="k">storageClassName:</span> local-path
+      <span class="k">podTemplate:</span>
+        <span class="k">spec:</span>
+          <span class="k">containers:</span>
+            - <span class="k">name:</span> elasticsearch
+              <span class="k">resources:</span>
+                <span class="k">requests:</span>
+                  <span class="k">memory:</span> 2Gi
+                  <span class="k">cpu:</span> 1
+                <span class="k">limits:</span>
+                  <span class="c"># No cpu limit on purpose: CFS throttling during</span>
+                  <span class="c"># recovery and merges costs more than it protects.</span>
+                  <span class="k">memory:</span> 2Gi
+              <span class="k">env:</span>
+                <span class="c"># Heap = half the limit. The rest is off-heap and page</span>
+                <span class="c"># cache. Keep Xms == Xmx.</span>
+                - <span class="k">name:</span> ES_JAVA_OPTS
+                  <span class="k">value:</span> <span class="c">"-Xms1g -Xmx1g"</span></pre>
+      <p>Omitting <code>volumeClaimTemplates</code> entirely is legal and gives you a 1Gi claim.
+      Declaring it means you will <em>notice</em> when it needs to change — and Phase 06 has a
+      lesson about what happens to these volumes when you edit them.</p>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">03</div>
+    <div>
+      <h3>Apply, and watch two things at once</h3>
+      <div class="filename"><span>PowerShell or zsh — same commands</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl apply -f phase-3/k8s/elasticsearch.yaml
+kubectl get elasticsearch -n eck -w      <span class="c"># `es` is the short name</span></pre>
+      <p>The <code>HEALTH</code> column walks <code>unknown</code> → <code>red</code> →
+      <code>green</code>; <code>PHASE</code> goes <code>ApplyingChanges</code> → <code>Ready</code>.
+      Two to three minutes on a first run, most of it pulling the image. Keep the operator log from
+      Phase 02 open in the second terminal while this happens — the reconcile entries are the
+      narration for what you are watching.</p>
+      <div class="note warn">
+        <span class="eyebrow">If it stalls in Pending</span>
+        <p><code>kubectl describe pod -n eck obs-es-default-0</code> first, always. Insufficient
+        memory means the 2Gi request does not fit a k3d agent — raise Docker Desktop's memory
+        allocation, not the manifest. A pod stuck on <code>waiting for first consumer</code> is
+        normal for <code>local-path</code>: the PVC binds only once the pod is scheduled.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">04</div>
+    <div>
+      <h3>Enumerate what was generated</h3>
+      <p>This is the phase. Do not skim it — go item by item and say out loud what each one is for.</p>
+      <div class="filename"><span>PowerShell or zsh</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl get all,secret,pdb,cm -n eck</pre>
+      <table class="pins">
+        <thead><tr><th>Secret</th><th>Contains</th><th></th></tr></thead>
+        <tbody>
+          <tr><td><code>obs-es-elastic-user</code></td><td>the <code>elastic</code> superuser password, generated</td><td class="state">you use this</td></tr>
+          <tr><td><code>obs-es-http-certs-public</code></td><td><code>ca.crt</code> — what clients trust</td><td class="state">Phase 08 needs it</td></tr>
+          <tr><td><code>obs-es-http-certs-internal</code></td><td>server certificate and key</td><td class="state">operator-managed</td></tr>
+          <tr><td><code>obs-es-transport-certs-public</code></td><td>the transport CA</td><td class="state">never touch</td></tr>
+          <tr><td><code>obs-es-internal-users</code></td><td>the accounts the operator itself logs in with</td><td class="state">never touch</td></tr>
+        </tbody>
+      </table>
+      <p>Plus one Service per role in the diagram above, a StatefulSet, its pod, one PVC, a
+      PodDisruptionBudget and the ConfigMaps holding the rendered <code>elasticsearch.yml</code>.
+      Roughly forty objects from twenty lines — every one of which exists in the production cluster
+      you inherited, undocumented.</p>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">05</div>
+    <div>
+      <h3>Connect properly, with certificate validation</h3>
+      <p>Port-forward in one terminal and leave it:</p>
+      <div class="filename"><span>PowerShell or zsh · second terminal</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl port-forward -n eck service/obs-es-http 9200</pre>
+      <p>The lazy way — <code>curl -k</code> — works, and teaches nothing. Do it once the right way,
+      because this is the exact mechanism the Collector will use in Phase 08.</p>
+      <div class="os os-win">
+      <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>$PW = kubectl get secret obs-es-elastic-user -n eck `
+  -o go-template='{{.data.elastic | base64decode}}'
+
+<span class="c"># Pipe to Set-Content, never redirect. PowerShell 5.1 redirection</span>
+<span class="c"># writes UTF-16LE and curl then rejects the PEM: "no start line".</span>
+kubectl get secret obs-es-http-certs-public -n eck `
+  -o go-template='{{index .data "ca.crt" | base64decode}}' `
+  | Set-Content -Encoding ascii $env:TEMP\es-ca.crt
+
+<span class="c"># curl.exe, not curl — bare `curl` is an alias for Invoke-WebRequest</span>
+<span class="c"># --resolve, because the cert has no `localhost` SAN. See below.</span>
+curl.exe --cacert $env:TEMP\es-ca.crt `
+  --resolve obs-es-http.eck.svc:9200:127.0.0.1 `
+  -u "elastic:$PW" https://obs-es-http.eck.svc:9200</pre>
+      </div>
+      <div class="os os-mac">
+      <div class="filename"><span>zsh</span><button class="copy" type="button">copy</button></div>
+<pre>PW=$(kubectl get secret obs-es-elastic-user -n eck \
+  -o go-template='{{.data.elastic | base64decode}}')
+
+kubectl get secret obs-es-http-certs-public -n eck \
+  -o go-template='{{index .data "ca.crt" | base64decode}}' &gt; /tmp/es-ca.crt
+
+<span class="c"># no -k anywhere; --resolve because the cert has no `localhost` SAN</span>
+curl --cacert /tmp/es-ca.crt \
+  --resolve obs-es-http.eck.svc:9200:127.0.0.1 \
+  -u "elastic:$PW" https://obs-es-http.eck.svc:9200</pre>
+      </div>
+      <div class="check"><span class="tick">✓</span><span>A JSON banner with <code>"number" : "8.19.21"</code> and <code>"cluster_name" : "obs"</code></span></div>
+      <div class="check"><span class="tick">✓</span><span>No certificate warning, because you supplied the CA rather than ignoring it</span></div>
+      <div class="note warn">
+        <span class="eyebrow">Why not https://localhost:9200</span>
+        <p>Supplying the CA only settles <em>who signed the certificate</em>. TLS also checks
+        that the name you dialled appears in the certificate's Subject Alternative Names, and
+        the operator mints in-cluster names only:</p>
+<pre>kubectl get secret obs-es-http-certs-public -n eck \
+  -o go-template='{{index .data "tls.crt" | base64decode}}' \
+  | openssl x509 -noout -text | grep -A2 "Alternative Name"
+
+<span class="c">DNS:obs-es-http, DNS:obs-es-http.eck, DNS:obs-es-http.eck.svc, ...</span></pre>
+        <p>No <code>localhost</code>, no <code>127.0.0.1</code> — so
+        <code>curl --cacert … https://localhost:9200</code> fails with
+        <code class="e">SSL: no alternative certificate subject name matches target host
+        name 'localhost'</code>. <code>--resolve</code> is the fix: dial a name the certificate
+        actually claims, and point that name at the port-forward. Verification stays fully on.</p>
+        <p>The other fix is <code>spec.http.tls.selfSignedCertificate.subjectAltNames</code>,
+        adding <code>localhost</code> to the cert itself. It works, and it bakes a laptop
+        artifact into a manifest that is supposed to describe the cluster. Keep it client-side.</p>
+      </div>
+      <p>Then ask the cluster how it feels:</p>
+      <div class="os os-win">
+      <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>$ES = "https://obs-es-http.eck.svc:9200"
+$RESOLVE = "obs-es-http.eck.svc:9200:127.0.0.1"
+
+curl.exe --cacert $env:TEMP\es-ca.crt --resolve $RESOLVE -u "elastic:$PW" `
+  "$ES/_cluster/health?pretty"
+curl.exe --cacert $env:TEMP\es-ca.crt --resolve $RESOLVE -u "elastic:$PW" `
+  "$ES/_cat/nodes?v"</pre>
+      </div>
+      <div class="os os-mac">
+      <div class="filename"><span>zsh</span><button class="copy" type="button">copy</button></div>
+<pre>ES=https://obs-es-http.eck.svc:9200
+RESOLVE=obs-es-http.eck.svc:9200:127.0.0.1
+
+curl --cacert /tmp/es-ca.crt --resolve $RESOLVE -u "elastic:$PW" \
+  "$ES/_cluster/health?pretty"
+curl --cacert /tmp/es-ca.crt --resolve $RESOLVE -u "elastic:$PW" \
+  "$ES/_cat/nodes?v"</pre>
+      </div>
+      <p><code>_cat/nodes</code> shows one node holding every role — <code>cdfhilmrstw</code>. Phase
+      04 is about pulling those apart.</p>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">06</div>
+    <div>
+      <h3>The deliberate exercise: find the controller boundary</h3>
+      <p>Delete the pod and watch carefully. The question is not "does it come back" — it is
+      <em>who brought it back</em>.</p>
+      <div class="filename"><span>PowerShell or zsh</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl delete pod obs-es-default-0 -n eck
+kubectl get pod,es -n eck -w</pre>
+      <p>The <strong>StatefulSet controller</strong> recreated the pod — that is stock Kubernetes,
+      and it would have happened with the operator scaled to zero. The ECK operator only observed
+      the result and updated <code>HEALTH</code> on the Elasticsearch object. The pod reattached to
+      the same PVC, so no data moved. Knowing exactly where that line sits is worth more than any
+      amount of documentation, because it tells you which component to suspect when a pod does
+      <em>not</em> come back.</p>
+      <p>Your port-forward died with the pod. That is expected; restart it.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Three sharp edges</h2>
+  <div class="note warn">
+    <span class="eyebrow">Green here does not mean resilient</span>
+    <p>A single node reports <code>green</code> only because the system indices use
+    <code>auto_expand_replicas</code> and quietly settle at zero replicas. The first index you
+    create with <code>number_of_replicas: 1</code> goes <code>yellow</code> and stays there —
+    nothing is wrong, there is simply nowhere to put a copy. Do not train yourself to read green as
+    "safe" on this cluster; it currently means "one copy of everything, on one disk."</p>
+  </div>
+  <div class="note warn">
+    <span class="eyebrow">local-path pins your data to one node</span>
+    <p>The Rancher provisioner writes to a directory on whichever k3d node scheduled the pod, and
+    the PVC keeps it pinned there. Cordon that node and the pod will not reschedule — it will sit
+    <code>Pending</code> forever rather than move. It is a faithful stand-in for production's
+    local-disk storage class, which behaves the same way, and it is why Phase 04's node roles and
+    Phase 07's snapshots exist.</p>
+  </div>
+  <div class="note warn">
+    <span class="eyebrow">Deleting the Elasticsearch deletes the data too</span>
+    <p><code>spec.volumeClaimDeletePolicy</code> defaults to
+    <code>DeleteOnScaledownAndClusterDeletion</code>, so <code>kubectl delete es obs -n eck</code>
+    takes the PVCs — and the data — with it. That is the operator doing it, not Kubernetes: a
+    StatefulSet on its own always leaves its PVCs behind. Set
+    <code>DeleteOnScaledownOnly</code> if you want a deleted cluster's volumes to survive, and
+    check <code>kubectl get pvc -n eck</code> after any teardown either way.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Done when</h2>
+  <div class="check"><span class="tick">✓</span><span><code>kubectl get es -n eck</code> shows <code>green</code> / <code>Ready</code> / <code>8.19.21</code></span></div>
+  <div class="check"><span class="tick">✓</span><span>You can name every Secret, Service and workload in <code>ns/eck</code> and say what it is for</span></div>
+  <div class="check"><span class="tick">✓</span><span>You have queried the cluster with <code>--cacert</code> and no <code>-k</code></span></div>
+  <div class="check"><span class="tick">✓</span><span>You can say which controller recreated the deleted pod, and why that matters</span></div>
+  <div class="check"><span class="tick">✓</span><span><code>phase-3/k8s/elasticsearch.yaml</code> is committed</span></div>
+</section>
+
+<footer>
+  <p>Next: <strong>Phase 04 — Topology</strong>, which splits this one all-roles node into
+  nodeSets, and makes master quorum something you have reasoned about rather than inherited. Log
+  what broke here, with exact error text, in <code>learning-phases/03-elasticsearch-basics.md</code>
+  under Notes.</p>
+</footer>
+
+</div>
+
+<script>
+  function syncOs() {
+    var cur = document.documentElement.getAttribute("data-os");
+    document.querySelectorAll(".osbtn").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.os === cur));
+    });
+  }
+  document.querySelectorAll(".osbtn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.documentElement.setAttribute("data-os", btn.dataset.os);
+      try { localStorage.setItem("os", btn.dataset.os); } catch (e) {}
+      syncOs();
+    });
+  });
+  syncOs();
+
+  document.querySelectorAll(".copy").forEach(function (btn) {
+    btn.addEventListener("click", async function () {
+      var pre = btn.closest(".filename") && btn.closest(".filename").nextElementSibling;
+      if (!pre || pre.tagName !== "PRE") return;
+      var text = pre.innerText;
+      var done = false;
+      try {
+        await navigator.clipboard.writeText(text);
+        done = true;
+      } catch (e) {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          done = document.execCommand("copy");
+          document.body.removeChild(ta);
+        } catch (e2) { done = false; }
+      }
+      var was = btn.textContent;
+      btn.textContent = done ? "copied" : "select it";
+      setTimeout(function () { btn.textContent = was; }, 1600);
+    });
+  });
+</script>

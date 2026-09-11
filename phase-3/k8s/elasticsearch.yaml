@@ -1,0 +1,52 @@
+# Elasticsearch 8.19.21 — one node, one nodeSet. See 00-decisions.md D3.
+#
+# Namespace is `eck`, not `elastic-stack`: the operator installed in Phase 02
+# watches only the namespaces listed under managedNamespaces in
+# phase-2/helm/eck-operator/values.yaml. An Elasticsearch created anywhere else
+# is accepted by the webhook and then reconciled by nobody.
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: obs
+  namespace: eck
+spec:
+  version: 8.19.21
+  nodeSets:
+    - name: default
+      count: 1
+      config:
+        # Elasticsearch memory-maps index files and wants vm.max_map_count=262144.
+        # On a laptop that sysctl lives in the Docker Desktop VM, not in the k3d
+        # containers, and does not survive a restart. Turning mmap off sidesteps it
+        # at a search-performance cost. Correct for the lab, WRONG for production —
+        # set the sysctl on the nodes there and delete this line.
+        node.store.allow_mmap: false
+      volumeClaimTemplates:
+        - metadata:
+            # This name is required. Anything else is mounted as an extra volume
+            # and the data path silently stays on the 1Gi default claim.
+            name: elasticsearch-data
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources:
+              requests:
+                storage: 10Gi
+            # k3d's built-in Rancher local-path provisioner.
+            storageClassName: local-path
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              resources:
+                requests:
+                  memory: 2Gi
+                  cpu: 1
+                limits:
+                  # No cpu limit on purpose: CFS throttling during recovery and
+                  # merges causes far more trouble than it prevents.
+                  memory: 2Gi
+              env:
+                # Heap = half the memory limit. The rest is off-heap structures
+                # and page cache. Keep Xms == Xmx.
+                - name: ES_JAVA_OPTS
+                  value: "-Xms1g -Xmx1g"

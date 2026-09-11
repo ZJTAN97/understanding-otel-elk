@@ -1,0 +1,642 @@
+<title>Three Masters, Two Data Nodes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#EDF0F3;
+    --surface:#FFFFFF;
+    --ink:#12161C;
+    --muted:#58626F;
+    --rule:#D3D9E0;
+    --accent:#8A5D00;
+    --accent-soft:rgba(138,93,0,.10);
+    --ok:#0F6B54;
+    --warn:#9C3B12;
+    --term-bg:#151A21;
+    --term-ink:#DCE2EA;
+    --term-dim:#7C8794;
+    --term-rule:#2A323C;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0E1218;
+      --surface:#151A21;
+      --ink:#E3E8EE;
+      --muted:#98A2AF;
+      --rule:#252C36;
+      --accent:#E2AB45;
+      --accent-soft:rgba(226,171,69,.12);
+      --ok:#4FBFA0;
+      --warn:#E08050;
+      --term-bg:#0A0D12;
+      --term-ink:#DCE2EA;
+      --term-dim:#78838F;
+      --term-rule:#222A33;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0E1218;
+    --surface:#151A21;
+    --ink:#E3E8EE;
+    --muted:#98A2AF;
+    --rule:#252C36;
+    --accent:#E2AB45;
+    --accent-soft:rgba(226,171,69,.12);
+    --ok:#4FBFA0;
+    --warn:#E08050;
+    --term-bg:#0A0D12;
+    --term-ink:#DCE2EA;
+    --term-dim:#78838F;
+    --term-rule:#222A33;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+    font-size:15.5px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:900px;margin:0 auto;padding:40px 24px 96px}
+  h1,h2,h3,.eyebrow,.num{font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif}
+  h1{font-size:clamp(2.1rem,5vw,3.1rem);font-weight:700;line-height:1.03;letter-spacing:-.015em;margin:.15em 0 .3em;text-wrap:balance}
+  h2{font-size:1.45rem;font-weight:700;letter-spacing:-.01em;margin:0 0 .2em;text-wrap:balance}
+  h3{font-size:1.02rem;font-weight:600;margin:0 0 .35em}
+  p{margin:0 0 .85em;max-width:66ch}
+  a{color:var(--accent)}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.88em}
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:500;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--accent);
+  }
+  .lede{font-size:1.12rem;color:var(--muted);max-width:60ch}
+
+  header{border-bottom:1px solid var(--rule);padding-bottom:28px;margin-bottom:36px}
+  .goal{
+    display:flex;gap:14px;align-items:flex-start;margin-top:22px;
+    border-left:3px solid var(--accent);padding:2px 0 2px 14px;
+  }
+  .goal p{margin:0;font-size:.95rem}
+
+  .pins{width:100%;border-collapse:collapse;font-size:.92rem;margin:.4em 0 0}
+  .pins th{
+    text-align:left;font-family:"IBM Plex Mono",monospace;font-size:.68rem;
+    letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+    font-weight:500;padding:0 12px 8px 0;border-bottom:1px solid var(--rule);
+  }
+  .pins td{padding:9px 12px 9px 0;border-bottom:1px solid var(--rule);vertical-align:top;font-variant-numeric:tabular-nums}
+  .pins td:first-child{font-weight:500;white-space:nowrap}
+  .pins code{background:var(--accent-soft);color:var(--ink);padding:1px 5px;border-radius:3px}
+  .state{font-family:"IBM Plex Mono",monospace;font-size:.78rem;white-space:nowrap}
+  .state.bad{color:var(--warn)}
+  .state.good{color:var(--ok)}
+
+  section{margin-top:52px}
+  .rail{display:grid;grid-template-columns:56px 1fr;gap:0 20px;align-items:start}
+  .num{
+    font-size:1.5rem;font-weight:700;color:var(--accent);
+    font-variant-numeric:tabular-nums;line-height:1.1;padding-top:.05em;
+    border-top:2px solid var(--accent);
+  }
+  .step{margin-top:40px}
+  .step:first-of-type{margin-top:26px}
+
+  pre{
+    background:var(--term-bg);color:var(--term-ink);border-radius:5px;
+    margin:.9em 0;padding:14px 16px;overflow-x:auto;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.83rem;line-height:1.65;
+    border:1px solid var(--term-rule);
+  }
+  pre .c{color:var(--term-dim)}
+  pre .k{color:#E2AB45}
+  pre .e{color:#E08050}
+  .filename{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.06em;
+    color:var(--muted);margin:1.4em 0 -.5em;
+  }
+  .copy{
+    font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.08em;
+    text-transform:uppercase;background:none;border:1px solid var(--rule);
+    color:var(--muted);border-radius:3px;padding:3px 8px;cursor:pointer;
+  }
+  .copy:hover{color:var(--ink);border-color:var(--muted)}
+  .copy:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .check{
+    display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:baseline;
+    font-size:.93rem;margin:.5em 0;
+  }
+  .tick{color:var(--ok);font-family:"IBM Plex Mono",monospace}
+  .note{
+    background:var(--surface);border:1px solid var(--rule);border-radius:5px;
+    padding:16px 18px;margin:1.2em 0;font-size:.93rem;
+  }
+  .note.warn{border-left:3px solid var(--warn)}
+  .note.fwd{border-left:3px solid var(--accent)}
+  .note p:last-child{margin-bottom:0}
+  .note .eyebrow{display:block;margin-bottom:.4em;color:var(--muted)}
+  .note.warn .eyebrow{color:var(--warn)}
+
+  ul{margin:.4em 0 1em;padding-left:1.1em;max-width:64ch}
+  li{margin:.3em 0}
+
+  figure{margin:1.6em 0 0}
+  figcaption{font-size:.82rem;color:var(--muted);margin-top:10px;max-width:62ch}
+  svg{width:100%;height:auto;display:block}
+  .sv-surface{fill:var(--surface)}
+  .sv-rule{stroke:var(--rule)}
+  .sv-ink{fill:var(--ink)}
+  .sv-muted{fill:var(--muted)}
+  .sv-accent{fill:var(--accent)}
+  .sv-accent-s{stroke:var(--accent)}
+  .sv-warn{fill:var(--warn)}
+  .sv-warn-s{stroke:var(--warn)}
+  .sv-t{font-family:"IBM Plex Sans",sans-serif;font-size:12px}
+  .sv-m{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.04em}
+
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--rule);color:var(--muted);font-size:.9rem}
+  @media (max-width:640px){
+    .rail{grid-template-columns:1fr;gap:8px}
+    .num{border-top:none;padding-top:0}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  /* os lanes */
+  .osbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:20px}
+  .osbar .lbl{
+    font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--muted);margin-right:4px;
+  }
+  .osbtn{
+    font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.06em;
+    background:none;border:1px solid var(--rule);color:var(--muted);
+    border-radius:3px;padding:4px 10px;cursor:pointer;
+  }
+  .osbtn[aria-pressed="true"]{color:var(--ink);border-color:var(--accent);background:var(--accent-soft)}
+  .osbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  :root[data-os="mac"] .os-win{display:none}
+  :root:not([data-os="mac"]) .os-mac{display:none}
+</style>
+<script>
+  (function () {
+    var os = null;
+    try { os = localStorage.getItem("os"); } catch (e) {}
+    if (os !== "mac" && os !== "win") {
+      os = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "mac" : "win";
+    }
+    document.documentElement.setAttribute("data-os", os);
+  })();
+</script>
+
+
+<div class="page">
+
+<header>
+  <span class="eyebrow">Phase 04 · Topology</span>
+  <h1>Three masters, two data nodes</h1>
+  <p class="lede">Production runs a three-tier layout nobody currently justifies. This phase is
+  where you earn the right to keep it — or to drop a tier on purpose.</p>
+  <div class="goal">
+    <p><strong>Done when:</strong> five nodes hold the roles you declared, health is
+    <code>green</code>, you have watched a shard relocate, and a production topology
+    recommendation with its reasoning is written into
+    <code>learning-phases/18-production-design.md</code> — provisional numbers included.</p>
+  </div>
+  <div class="osbar" role="group" aria-label="Choose the shell the snippets are written for">
+    <span class="lbl">Snippets for</span>
+    <button class="osbtn" type="button" data-os="win" aria-pressed="false">Windows &middot; PowerShell</button>
+    <button class="osbtn" type="button" data-os="mac" aria-pressed="false">macOS &middot; zsh</button>
+  </div>
+</header>
+
+<section>
+  <h2>The tier question, answered as far as it can be</h2>
+  <p>Production has <code>-es-master</code>, <code>-es-ingest</code> and <code>-es-default</code>.
+  Two of those three tiers survive scrutiny.</p>
+  <table class="pins">
+    <thead><tr><th>Tier</th><th>Verdict</th><th></th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Dedicated master</td>
+        <td>Keep, at <strong>3</strong>. A master under query-heap pressure stalls cluster-state
+        updates, and a stalled master is indistinguishable from a dead cluster</td>
+        <td class="state good">justified</td>
+      </tr>
+      <tr>
+        <td>Dedicated ingest</td>
+        <td>Drop. <strong>D4</strong> puts enrichment in the OTel Collector, upstream. A tier whose
+        job is running ingest pipelines you no longer write is a tier that idles</td>
+        <td class="state bad">inherited, not chosen</td>
+      </tr>
+      <tr>
+        <td>Data</td>
+        <td>Keep, and give it the storage and heap the ingest tier was holding</td>
+        <td class="state good">justified</td>
+      </tr>
+      <tr>
+        <td>Node count for production</td>
+        <td>Blocked on <strong>Q2</strong> — daily ingest volume and affordable node count</td>
+        <td class="state">lab runs regardless</td>
+      </tr>
+      <tr>
+        <td>ml / transform</td>
+        <td>Off. Declaring <code>node.roles</code> is exhaustive, and each role costs memory</td>
+        <td class="state">revisit at Q7</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>Write that reasoning down in <code>18-production-design.md</code> even while Q2 is open. A
+  provisional recommendation with stated assumptions is reviewable; a blank section is how the
+  current topology got inherited in the first place.</p>
+</section>
+
+<section>
+  <h2>What this edit actually is</h2>
+  <figure>
+    <svg viewBox="0 0 820 392" role="img" aria-label="Diagram: the single all-roles nodeSet from Phase 03 is replaced by two nodeSets — three master-only pods forming a quorum of two, and two data-and-ingest pods holding primary and replica shards on separate nodes.">
+      <!-- before -->
+      <text x="8" y="24" class="sv-m sv-muted">PHASE 03</text>
+      <rect x="8" y="34" width="196" height="78" rx="5" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="22" y="56" class="sv-t sv-ink" font-weight="600">nodeSet default</text>
+      <text x="22" y="74" class="sv-m sv-muted">obs-es-default-0</text>
+      <text x="22" y="90" class="sv-m sv-muted">roles: cdfhilmrstw</text>
+      <text x="22" y="106" class="sv-m sv-warn">one JVM does everything</text>
+
+      <path d="M204 73 H262" class="sv-accent-s" stroke-width="1.5" fill="none"/>
+      <path d="M262 73 l-8 -4 v8 z" class="sv-accent"/>
+      <text x="206" y="65" class="sv-m sv-accent">not an edit —</text>
+      <text x="206" y="94" class="sv-m sv-accent">a migration</text>
+
+      <!-- after: masters -->
+      <text x="284" y="24" class="sv-m sv-muted">PHASE 04</text>
+      <rect x="284" y="34" width="528" height="110" rx="6" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="298" y="54" class="sv-t sv-ink" font-weight="600">sts/obs-es-master · nodeSet master · count 3</text>
+
+      <rect x="298" y="66" width="140" height="44" rx="4" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="310" y="84" class="sv-t sv-ink" font-weight="600">master-0</text>
+      <text x="310" y="100" class="sv-m sv-accent">elected</text>
+      <rect x="450" y="66" width="140" height="44" rx="4" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="462" y="84" class="sv-t sv-ink" font-weight="600">master-1</text>
+      <text x="462" y="100" class="sv-m sv-muted">voting member</text>
+      <rect x="602" y="66" width="140" height="44" rx="4" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="614" y="84" class="sv-t sv-ink" font-weight="600">master-2</text>
+      <text x="614" y="100" class="sv-m sv-muted">voting member</text>
+      <text x="298" y="132" class="sv-m sv-muted">quorum = 2 of 3 · survives one loss · 512m heap · 1Gi disk · no shards</text>
+
+      <!-- after: data -->
+      <rect x="284" y="158" width="528" height="132" rx="6" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="298" y="178" class="sv-t sv-ink" font-weight="600">sts/obs-es-data · nodeSet data · count 2 · roles data + ingest</text>
+
+      <rect x="298" y="192" width="234" height="72" rx="4" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="310" y="210" class="sv-t sv-ink" font-weight="600">data-0</text>
+      <rect x="310" y="220" width="96" height="30" rx="3" class="sv-surface sv-accent-s" stroke-width="1.5"/>
+      <text x="322" y="240" class="sv-m sv-accent">P0 primary</text>
+      <rect x="414" y="220" width="96" height="30" rx="3" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="426" y="240" class="sv-m sv-muted">R1 replica</text>
+
+      <rect x="546" y="192" width="234" height="72" rx="4" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="558" y="210" class="sv-t sv-ink" font-weight="600">data-1</text>
+      <rect x="558" y="220" width="96" height="30" rx="3" class="sv-surface sv-accent-s" stroke-width="1.5"/>
+      <text x="570" y="240" class="sv-m sv-accent">P1 primary</text>
+      <rect x="662" y="220" width="96" height="30" rx="3" class="sv-surface sv-rule" stroke-width="1.5"/>
+      <text x="674" y="240" class="sv-m sv-muted">R0 replica</text>
+
+      <text x="298" y="280" class="sv-m sv-muted">a replica never shares a node with its primary — that is the whole point</text>
+
+      <!-- bottom band -->
+      <rect x="8" y="306" width="804" height="76" rx="6" class="sv-surface sv-rule" stroke-width="1" stroke-dasharray="4 4"/>
+      <text x="22" y="326" class="sv-m sv-warn">NODESET NAME → STATEFULSET NAME → PVC NAME</text>
+      <text x="22" y="346" class="sv-t sv-ink">Rename a nodeSet and ECK removes one StatefulSet and creates another.</text>
+      <text x="22" y="364" class="sv-t sv-ink">Data migrates off the old set before it is torn down. A cosmetic edit; a multi-hour operation.</text>
+    </svg>
+    <figcaption>A nodeSet maps 1:1 to a StatefulSet, its PVCs and its pod template — and it is also
+    the unit of rolling change, which is what makes Phase 06 interesting. Going from one node to
+    five is therefore not a create: shards must leave <code>obs-es-default-0</code> before the
+    operator will take it away, and it will not remove a node holding the only copy of anything.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Run it</h2>
+
+  <div class="step rail">
+    <div class="num">01</div>
+    <div>
+      <h3>Check the laptop can hold five JVMs</h3>
+      <p>Do this before applying, not after watching pods sit <code>Pending</code>.</p>
+      <table class="pins">
+        <thead><tr><th>nodeSet</th><th>count · limit · heap · disk</th><th></th></tr></thead>
+        <tbody>
+          <tr><td><code>master</code></td><td>3 × 1Gi · 512m heap · 1Gi disk</td><td class="state">3Gi</td></tr>
+          <tr><td><code>data</code></td><td>2 × 2Gi · 1g heap · 10Gi disk</td><td class="state">4Gi</td></tr>
+          <tr><td>k3s + system</td><td>server, two agents, local-path, CoreDNS</td><td class="state">~1Gi</td></tr>
+          <tr><td>Total</td><td>allocate at least <strong>8Gi</strong> to Docker Desktop</td><td class="state bad">4Gi default is not enough</td></tr>
+        </tbody>
+      </table>
+      <div class="os os-win">
+      <div class="filename"><span>PowerShell · what Docker actually has</span><button class="copy" type="button">copy</button></div>
+<pre>docker info --format "{{.MemTotal}}"   <span class="c"># bytes; want &gt;= 8e9</span>
+<span class="c"># Raise it in Docker Desktop → Settings → Resources, or in %USERPROFILE%\.wslconfig</span></pre>
+      </div>
+      <div class="os os-mac">
+      <div class="filename"><span>zsh · what Docker actually has</span><button class="copy" type="button">copy</button></div>
+<pre>docker info --format "{{.MemTotal}}"   <span class="c"># bytes; want &gt;= 8e9</span>
+<span class="c"># Raise it in Docker Desktop → Settings → Resources → Memory</span></pre>
+      </div>
+      <p>If it will not stretch, drop the master <code>count</code> to 1 rather than shrinking
+      heaps below 512m — but know that you are then rehearsing a topology production will never
+      run, and the quorum lesson below becomes theory.</p>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">02</div>
+    <div>
+      <h3>The manifest</h3>
+      <p>Written to <code>phase-4/k8s/elasticsearch.yaml</code>. It supersedes the Phase 03 file;
+      keep both in git so the diff is readable.</p>
+      <div class="filename"><span>phase-4/k8s/elasticsearch.yaml · nodeSets only</span><button class="copy" type="button">copy</button></div>
+<pre><span class="k">  nodeSets:</span>
+    - <span class="k">name:</span> master
+      <span class="k">count:</span> 3
+      <span class="k">config:</span>
+        <span class="c"># Exhaustive. ml, transform and remote_cluster_client are now OFF.</span>
+        <span class="k">node.roles:</span> [<span class="c">"master"</span>]
+        <span class="k">node.store.allow_mmap:</span> false
+      <span class="k">volumeClaimTemplates:</span>
+        - <span class="k">metadata:</span> { <span class="k">name:</span> elasticsearch-data }
+          <span class="k">spec:</span>
+            <span class="k">accessModes:</span> [ReadWriteOnce]
+            <span class="k">resources:</span> { <span class="k">requests:</span> { <span class="k">storage:</span> 1Gi } }
+            <span class="k">storageClassName:</span> local-path
+      <span class="k">podTemplate:</span>
+        <span class="k">spec:</span>
+          <span class="k">containers:</span>
+            - <span class="k">name:</span> elasticsearch
+              <span class="k">resources:</span>
+                <span class="k">requests:</span> { <span class="k">memory:</span> 1Gi, <span class="k">cpu:</span> 500m }
+                <span class="k">limits:</span>   { <span class="k">memory:</span> 1Gi }
+              <span class="k">env:</span>
+                - <span class="k">name:</span> ES_JAVA_OPTS
+                  <span class="k">value:</span> <span class="c">"-Xms512m -Xmx512m"</span>
+
+    - <span class="k">name:</span> data
+      <span class="k">count:</span> 2
+      <span class="k">config:</span>
+        <span class="k">node.roles:</span> [<span class="c">"data"</span>, <span class="c">"ingest"</span>]
+        <span class="k">node.store.allow_mmap:</span> false
+      <span class="c"># ... 10Gi claim, 2Gi limit, -Xms1g -Xmx1g</span>
+
+    <span class="c"># - name: ingest</span>
+    <span class="c">#   Deliberately absent. See the tier table above and D4.</span></pre>
+      <div class="note warn">
+        <span class="eyebrow">The nodeSet named default is gone</span>
+        <p>Applying this removes the <code>default</code> nodeSet. That is the rename exercise from
+        step 06, happening for real, on your first apply — which is exactly why it is safe to do
+        now: the cluster holds nothing yet. Note what it costs when empty, so you have a baseline
+        for what it costs in step 06 when it is not.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">03</div>
+    <div>
+      <h3>Apply and watch the migration</h3>
+      <div class="filename"><span>PowerShell or zsh</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl apply -f phase-4/k8s/elasticsearch.yaml
+kubectl get pods,es -n eck -w</pre>
+      <p>The operator brings the new nodeSets up <em>first</em>, waits for the cluster to accept
+      them, moves shards, and only then tears the old node down. Health dips and recovers; it
+      should not go red. Keep the operator log open — the reconcile entries name each phase of
+      this, and this is the one place in Part 1 where the operator is visibly doing something a
+      StatefulSet could not do for itself.</p>
+      <div class="filename"><span>PowerShell or zsh</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl get es obs -n eck -o jsonpath="{.status}"
+kubectl get sts,pvc -n eck</pre>
+      <p>Two StatefulSets now, five PVCs, and no trace of <code>obs-es-default</code>.</p>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">04</div>
+    <div>
+      <h3>Confirm the roles landed as declared</h3>
+      <p>Port-forward and re-export the password — the Phase 03 service name is unchanged, but your
+      shell is probably new.</p>
+      <div class="os os-win">
+      <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>$PW = kubectl get secret obs-es-elastic-user -n eck `
+  -o go-template='{{.data.elastic | base64decode}}'
+<span class="c"># second terminal: kubectl port-forward -n eck service/obs-es-http 9200</span>
+
+curl.exe --cacert $env:TEMP\es-ca.crt -u "elastic:$PW" `
+  "https://localhost:9200/_cat/nodes?v&amp;h=name,node.role,master,heap.percent"</pre>
+      </div>
+      <div class="os os-mac">
+      <div class="filename"><span>zsh</span><button class="copy" type="button">copy</button></div>
+<pre>PW=$(kubectl get secret obs-es-elastic-user -n eck \
+  -o go-template='{{.data.elastic | base64decode}}')
+<span class="c"># second terminal: kubectl port-forward -n eck service/obs-es-http 9200</span>
+
+curl --cacert /tmp/es-ca.crt -u "elastic:$PW" \
+  "https://localhost:9200/_cat/nodes?v&amp;h=name,node.role,master,heap.percent"</pre>
+      </div>
+<pre><span class="c">name             node.role master heap.percent</span>
+obs-es-master-0  m         <span class="k">*</span>      31
+obs-es-master-1  m         -      28
+obs-es-master-2  m         -      27
+obs-es-data-0    di        -      22
+obs-es-data-1    di        -      24</pre>
+      <p><code>m</code> and <code>di</code>, not the <code>cdfhilmrstw</code> of Phase 03 — that is
+      the roles taking effect. The <code>*</code> marks the elected master; the other two are voting
+      members doing nothing until it dies.</p>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">05</div>
+    <div>
+      <h3>Replicas versus nodes, demonstrated</h3>
+      <p>Create an index with a replica and <em>put documents in it</em>. An empty index relocates
+      instantly and teaches you nothing; step 06 depends on there being something to move.</p>
+      <div class="os os-win">
+      <div class="filename"><span>PowerShell</span><button class="copy" type="button">copy</button></div>
+<pre>$ES = "https://localhost:9200"
+$CA = "$env:TEMP\es-ca.crt"
+
+curl.exe --cacert $CA -u "elastic:$PW" -X PUT "$ES/test-index" `
+  -H "Content-Type: application/json" `
+  -d '{\"settings\":{\"number_of_shards\":2,\"number_of_replicas\":1}}'
+
+<span class="c"># a few thousand docs so relocation takes measurable time</span>
+1..2000 | ForEach-Object {
+  curl.exe -s --cacert $CA -u "elastic:$PW" -X POST "$ES/test-index/_doc" `
+    -H "Content-Type: application/json" -d "{\"n\":$_}" | Out-Null
+}
+
+curl.exe --cacert $CA -u "elastic:$PW" "$ES/_cat/shards/test-index?v"</pre>
+      </div>
+      <div class="os os-mac">
+      <div class="filename"><span>zsh</span><button class="copy" type="button">copy</button></div>
+<pre>ES=https://localhost:9200
+CA=/tmp/es-ca.crt
+
+curl --cacert $CA -u "elastic:$PW" -X PUT "$ES/test-index" \
+  -H 'Content-Type: application/json' \
+  -d '{"settings":{"number_of_shards":2,"number_of_replicas":1}}'
+
+<span class="c"># a few thousand docs so relocation takes measurable time</span>
+for i in $(seq 1 2000); do
+  curl -s --cacert $CA -u "elastic:$PW" -X POST "$ES/test-index/_doc" \
+    -H 'Content-Type: application/json' -d "{\"n\":$i}" &gt; /dev/null
+done
+
+curl --cacert $CA -u "elastic:$PW" "$ES/_cat/shards/test-index?v"</pre>
+      </div>
+      <p>Four shards: two <code>p</code>, two <code>r</code>, and no primary sharing a node with its
+      own replica. Now take a data node away and watch the consequence:</p>
+      <div class="filename"><span>PowerShell or zsh</span><button class="copy" type="button">copy</button></div>
+<pre><span class="c"># edit phase-4/k8s/elasticsearch.yaml: nodeSet data count: 1</span>
+kubectl apply -f phase-4/k8s/elasticsearch.yaml
+kubectl get es -n eck -w    <span class="c"># health → yellow</span></pre>
+      <p><code>yellow</code>, not <code>red</code>: every primary is still there, but the replicas
+      have nowhere to go — a copy on the same node as its primary protects against nothing, so
+      Elasticsearch refuses to allocate it. Set <code>count</code> back to 2 and it goes green
+      again. This is the demonstration that a single-node lab cannot teach resilience, and the
+      reason Phase 01 insisted on multiple agents.</p>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">06</div>
+    <div>
+      <h3>The deliberate exercise: rename a nodeSet</h3>
+      <p>With 2000 documents in place and <code>count</code> back at 2, change the nodeSet
+      <code>name</code> from <code>data</code> to <code>data-hot</code> and apply.</p>
+      <div class="filename"><span>PowerShell or zsh</span><button class="copy" type="button">copy</button></div>
+<pre>kubectl apply -f phase-4/k8s/elasticsearch.yaml
+kubectl get pods,pvc -n eck -w</pre>
+      <div class="check"><span class="tick">✓</span><span><code>obs-es-data-hot-0</code> and <code>-1</code> appear as a <em>new</em> StatefulSet with <em>new</em> PVCs</span></div>
+      <div class="check"><span class="tick">✓</span><span>Shards relocate off <code>obs-es-data-*</code> — watch <code>_cat/shards</code> show <code>RELOCATING</code></span></div>
+      <div class="check"><span class="tick">✓</span><span>Only once the data has moved does the old StatefulSet go away</span></div>
+      <p>Nothing in the diff says "migrate every byte of data." The nodeSet name is part of the
+      StatefulSet name, the StatefulSet name is part of the PVC names, and Kubernetes cannot rename
+      either — so ECK does the only correct thing available to it. In the lab that is thirty
+      seconds. On a production data node it is hours of shard relocation, triggered by an edit that
+      reads like a typo fix in review.</p>
+      <div class="note fwd">
+        <span class="eyebrow">Carry this forward</span>
+        <p>Decide production's nodeSet names <em>now</em>, in Phase 18, and never touch them again.
+        <code>data-hot</code> is a better name than <code>data</code> precisely because it survives
+        the day someone adds a warm tier.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step rail">
+    <div class="num">07</div>
+    <div>
+      <h3>Write the recommendation down</h3>
+      <p>This is the actual deliverable of the phase, and the only one that outlives the lab. In
+      <code>learning-phases/18-production-design.md</code>, record: three dedicated masters, no
+      dedicated ingest tier and why, the data-node count you would pick, and what about that number
+      is provisional on <strong>Q2</strong>. State the assumptions explicitly so that when the
+      volume numbers arrive, the decision can be checked rather than redone.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Three sharp edges</h2>
+  <div class="note warn">
+    <span class="eyebrow">Anti-affinity is soft by default</span>
+    <p>ECK sets <em>preferred</em>, not required, pod anti-affinity within a nodeSet. On a three-node
+    k3d cluster the scheduler will usually spread three masters across three nodes — but it is free
+    to stack two on one node, and then a single node failure costs you quorum. Check with
+    <code>kubectl get pods -n eck -o wide</code>. In production this belongs as
+    <code>requiredDuringSchedulingIgnoredDuringExecution</code> across failure domains, which is a
+    Phase 18 decision.</p>
+  </div>
+  <div class="note warn">
+    <span class="eyebrow">Never hand-edit voting exclusions</span>
+    <p>Scaling masters down is not a StatefulSet operation — a departing master must first be added
+    to the voting configuration exclusions or the cluster can lose quorum mid-change. ECK does this
+    for you on every nodeSet change. The failure mode to recognise is a master scale-down that
+    appears stuck: that is usually the operator correctly waiting, not a hang. Reaching for
+    <code>_cluster/voting_config_exclusions</code> by hand while the operator is mid-reconcile is
+    how a healthy cluster becomes an unavailable one.</p>
+  </div>
+  <div class="note warn">
+    <span class="eyebrow">node.roles is exhaustive, and Kibana notices</span>
+    <p>Listing <code>["master"]</code> does not mean "master, plus the defaults" — it means master
+    and nothing else. With no node carrying <code>ml</code> or <code>transform</code>, the Kibana
+    features that need them return errors rather than hiding themselves, and the error text names
+    neither this file nor node roles. That is the right trade at this size, but write it in the
+    Notes section now so the error is recognisable in Phase 13 rather than mysterious.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Done when</h2>
+  <div class="check"><span class="tick">✓</span><span>Five nodes, roles <code>m</code> / <code>di</code> as declared, health <code>green</code></span></div>
+  <div class="check"><span class="tick">✓</span><span>You can explain why 3 masters and not 2, and why not 4</span></div>
+  <div class="check"><span class="tick">✓</span><span>You have watched a shard <code>RELOCATING</code> and can read <code>_cat/shards</code></span></div>
+  <div class="check"><span class="tick">✓</span><span>You have seen yellow caused by a missing node, not by a broken cluster</span></div>
+  <div class="check"><span class="tick">✓</span><span>The production topology recommendation is written in <code>18-production-design.md</code>, assumptions stated</span></div>
+</section>
+
+<footer>
+  <p>Next: <strong>Phase 05 — Kibana and Ingress</strong>, where the association mechanism wires
+  Kibana to this cluster without you copying a password anywhere, and the self-signed HTTP
+  certificate from Phase 03 finally has to face a browser. Log what broke here, with exact error
+  text, in <code>learning-phases/04-elasticsearch-topology.md</code> under Notes.</p>
+</footer>
+
+</div>
+
+<script>
+  function syncOs() {
+    var cur = document.documentElement.getAttribute("data-os");
+    document.querySelectorAll(".osbtn").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.os === cur));
+    });
+  }
+  document.querySelectorAll(".osbtn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.documentElement.setAttribute("data-os", btn.dataset.os);
+      try { localStorage.setItem("os", btn.dataset.os); } catch (e) {}
+      syncOs();
+    });
+  });
+  syncOs();
+
+  document.querySelectorAll(".copy").forEach(function (btn) {
+    btn.addEventListener("click", async function () {
+      var pre = btn.closest(".filename") && btn.closest(".filename").nextElementSibling;
+      if (!pre || pre.tagName !== "PRE") return;
+      var text = pre.innerText;
+      var done = false;
+      try {
+        await navigator.clipboard.writeText(text);
+        done = true;
+      } catch (e) {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          done = document.execCommand("copy");
+          document.body.removeChild(ta);
+        } catch (e2) { done = false; }
+      }
+      var was = btn.textContent;
+      btn.textContent = done ? "copied" : "select it";
+      setTimeout(function () { btn.textContent = was; }, 1600);
+    });
+  });
+</script>
